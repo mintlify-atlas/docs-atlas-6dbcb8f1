@@ -1,0 +1,110 @@
+---
+title: getProduct
+description: Retrieve detailed product information including parts, descriptions, and specifications
+---
+
+## Method Signature
+
+```typescript
+client.productData.getProduct(params: GetProductParams): Promise<any>
+```
+
+Retrieves comprehensive product data from a supplier's catalog, including product details, parts, colors, sizes, and specifications.
+
+## Parameters
+
+<ParamField path="productId" type="string" required>
+  The unique identifier for the product in the supplier's system
+</ParamField>
+
+<ParamField path="localizationCountry" type="string" required>
+  The country code for localization (e.g., `US` for United States, `CA` for Canada)
+</ParamField>
+
+<ParamField path="localizationLanguage" type="string" required>
+  The language code for localization (e.g., `en` for English, `fr` for French)
+</ParamField>
+
+<ParamField path="partId" type="string">
+  Optional specific part identifier to retrieve data for a single part variant
+</ParamField>
+
+<ParamField path="colorName" type="string">
+  Optional color name to filter product data by specific color
+</ParamField>
+
+<ParamField path="ApparelSizeArray" type="array">
+  Optional array of apparel sizes to filter product data (currently not fully supported in templates)
+</ParamField>
+
+## Returns
+
+<ResponseField name="Product" type="object">
+  The complete product data object containing all product information
+  
+  <Expandable title="Product details">
+    <ResponseField name="productId" type="string">
+      The product identifier
+    </ResponseField>
+    
+    <ResponseField name="productName" type="string">
+      The name of the product
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Detailed product description
+    </ResponseField>
+    
+    <ResponseField name="PartArray" type="array">
+      Array of product parts/variants with colors, sizes, and SKUs
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '2.0.0',
+      url: 'https://supplier.com/productData'
+    }
+  ]
+});
+
+// Get complete product information
+const product = await client.productData.getProduct({
+  productId: 'ITEM-12345',
+  localizationCountry: 'US',
+  localizationLanguage: 'en'
+});
+
+console.log(product);
+
+// Get product data for a specific part
+const specificPart = await client.productData.getProduct({
+  productId: 'ITEM-12345',
+  localizationCountry: 'US',
+  localizationLanguage: 'en',
+  partId: 'ITEM-12345-BLK-L'
+});
+
+// Get product data filtered by color
+const redProducts = await client.productData.getProduct({
+  productId: 'ITEM-12345',
+  localizationCountry: 'US',
+  localizationLanguage: 'en',
+  colorName: 'Red'
+});
+```
+
+## PromoStandards Documentation
+
+For more details on the Product Data service, refer to the official PromoStandards documentation:
+[Product Data Service 2.0.0](https://tools.promostandards.org/product-data-2-0-0)

@@ -1,0 +1,91 @@
+---
+title: "getOrderShipmentNotification"
+description: "Retrieve shipment notifications for orders"
+---
+
+## Method
+
+```typescript
+client.orderShipmentNotification.getOrderShipmentNotification(params: GetOrderShipmentNotificationParams): Promise<any>
+```
+
+Retrieves shipment notification details for orders, including tracking information and shipment status.
+
+## Parameters
+
+<ParamField path="queryType" type="string" required>
+  The type of query to perform. Determines how shipment notifications will be retrieved.
+</ParamField>
+
+<ParamField path="referenceNumber" type="string">
+  Reference number for the order or shipment. Used when querying by specific reference.
+</ParamField>
+
+<ParamField path="shipmentDateTimeStamp" type="string">
+  Timestamp for filtering shipment notifications. Returns shipments created or updated after this time.
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to the shipment notification details. The response format depends on the client's configured format (JSON or XML).
+
+<ResponseField name="ShipmentNotificationArray" type="array">
+  Array of shipment notification objects
+  
+  <Expandable title="properties">
+    <ResponseField name="shipmentId" type="string">
+      Unique identifier for the shipment
+    </ResponseField>
+    
+    <ResponseField name="orderNumber" type="string">
+      Order number associated with this shipment
+    </ResponseField>
+    
+    <ResponseField name="shipDate" type="string">
+      Date when the shipment was sent
+    </ResponseField>
+    
+    <ResponseField name="carrier" type="string">
+      Shipping carrier name
+    </ResponseField>
+    
+    <ResponseField name="trackingNumber" type="string">
+      Tracking number for the shipment
+    </ResponseField>
+    
+    <ResponseField name="shipmentItems" type="array">
+      Array of items included in this shipment
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'OrderShipmentNotification',
+      version: '2.0.0',
+      url: 'https://supplier.com/shipmentNotification',
+    },
+  ],
+});
+
+const shipmentNotification = await client.orderShipmentNotification.getOrderShipmentNotification({
+  queryType: 'PO',
+  referenceNumber: 'PO-12345',
+  shipmentDateTimeStamp: '2024-01-01T00:00:00Z',
+});
+
+console.log(shipmentNotification);
+```
+
+## Related Methods
+
+- [getOrderStatusDetails](/api/order-status/get-order-status-details) - Get detailed order status information
+- [sendPO](/api/purchase-order/send-po) - Submit a purchase order

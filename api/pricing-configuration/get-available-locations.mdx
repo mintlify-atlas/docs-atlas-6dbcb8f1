@@ -1,0 +1,49 @@
+---
+title: 'Get available locations'
+description: 'Retrieve available decoration locations for a product'
+---
+
+Retrieves all available decoration locations for a specific product, including positioning and size constraints for each location.
+
+## Method signature
+
+```javascript
+await client.productPricingAndConfiguration.getAvailableLocations(params)
+```
+
+## Parameters
+
+<ParamField path="productId" type="string" required>
+  The unique identifier for the product
+</ParamField>
+
+<ParamField path="localizationCountry" type="string" required>
+  Country code for localization (e.g., "US", "CA")
+</ParamField>
+
+<ParamField path="localizationLanguage" type="string" required>
+  Language code for localization (e.g., "en", "fr")
+</ParamField>
+
+## Returns
+
+Returns a promise that resolves to an array of available decoration locations, including:
+
+- Location identifier and name
+- Maximum decoration dimensions
+- Default decoration dimensions
+- Supported decoration methods
+- Location-specific constraints
+
+## Example
+
+```javascript
+const locations =
+  await client.productPricingAndConfiguration.getAvailableLocations({
+    productId: 'item_id',
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+  });
+
+console.log(locations);
+```

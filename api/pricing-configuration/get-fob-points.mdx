@@ -1,0 +1,49 @@
+---
+title: 'Get FOB points'
+description: 'Retrieve available FOB (Free On Board) shipping points'
+---
+
+Retrieves all available FOB (Free On Board) points for a product, which represent the shipping origin locations and associated shipping costs.
+
+## Method signature
+
+```javascript
+await client.productPricingAndConfiguration.getFobPoints(params)
+```
+
+## Parameters
+
+<ParamField path="productId" type="string" required>
+  The unique identifier for the product
+</ParamField>
+
+<ParamField path="localizationCountry" type="string" required>
+  Country code for localization (e.g., "US", "CA")
+</ParamField>
+
+<ParamField path="localizationLanguage" type="string" required>
+  Language code for localization (e.g., "en", "fr")
+</ParamField>
+
+## Returns
+
+Returns a promise that resolves to an array of FOB points, including:
+
+- FOB point identifier
+- Location name and address
+- Postal/ZIP code
+- Country and region information
+- Associated shipping costs and options
+
+## Example
+
+```javascript
+const fobPoints =
+  await client.productPricingAndConfiguration.getFobPoints({
+    productId: 'item_id',
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+  });
+
+console.log(fobPoints);
+```

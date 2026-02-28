@@ -1,0 +1,112 @@
+---
+title: 'Get filter values'
+description: 'Retrieve available filter values for a product to use with inventory queries.'
+keywords: ['inventory', 'filter', 'values', 'parts', 'colors', 'sizes']
+---
+
+## Method signature
+
+```javascript
+client.inventory.getFilterValues(params)
+```
+
+Retrieves all available filter values for a specified product. This method is useful for discovering what part IDs, sizes, and colors are available before querying inventory levels.
+
+## Parameters
+
+<ParamField path="body.productId" type="string" required>
+  The unique identifier for the product. This is the supplier's product ID.
+</ParamField>
+
+## Return value
+
+Returns a Promise that resolves to the available filter values for the product. The response format depends on the client's configured `format` option (JSON or XML).
+
+<ResponseField name="success" type="boolean">
+  Indicates whether the request was successful.
+</ResponseField>
+
+<ResponseField name="filterValues" type="object">
+  Object containing arrays of available filter values.
+  
+  <Expandable title="properties">
+    <ResponseField name="partIdArray" type="string[]">
+      Array of all available part IDs for the product.
+    </ResponseField>
+    
+    <ResponseField name="labelSizeArray" type="string[]">
+      Array of all available label sizes for the product.
+    </ResponseField>
+    
+    <ResponseField name="partColorArray" type="string[]">
+      Array of all available part colors for the product.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Code example
+
+<CodeGroup>
+
+```javascript Basic usage
+const filterValues = await client.inventory.getFilterValues({
+  productId: 'item_id'
+});
+
+console.log(filterValues);
+```
+
+```javascript Use with getInventoryLevels
+// First, get available filter values
+const filterValues = await client.inventory.getFilterValues({
+  productId: 'item_id'
+});
+
+console.log('Available colors:', filterValues.filterValues.partColorArray);
+console.log('Available sizes:', filterValues.filterValues.labelSizeArray);
+
+// Then, query inventory with specific filters
+const inventoryData = await client.inventory.getInventoryLevels({
+  productId: 'item_id',
+  filters: {
+    PartColorArray: ['Red'],
+    LabelSizeArray: ['M', 'L']
+  }
+});
+
+console.log(inventoryData);
+```
+
+```javascript Complete example
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'account_id',
+  password: 'password',
+  endpoints: [
+    {
+      type: 'Inventory',
+      version: '2.0.0',
+      url: 'https://supplier.com/inventory'
+    }
+  ]
+});
+
+const filterValues = await client.inventory.getFilterValues({
+  productId: 'item_id'
+});
+
+console.log(JSON.stringify(filterValues, null, 2));
+```
+
+</CodeGroup>
+
+<Tip>
+Use this method before calling `getInventoryLevels()` to discover what filters are available for a product. This helps you build dynamic filter interfaces and avoid querying for non-existent variations.
+</Tip>
+
+## Related methods
+
+<Card title="Get inventory levels" icon="boxes-stacked" href="/api/inventory/get-inventory-levels">
+  Retrieve current inventory levels with optional filtering
+</Card>

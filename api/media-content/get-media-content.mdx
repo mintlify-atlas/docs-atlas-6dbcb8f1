@@ -1,0 +1,141 @@
+---
+title: 'Get media content'
+description: 'Retrieve media content for a product including images, videos, and other media files.'
+keywords: ['media', 'content', 'images', 'videos', 'product media']
+---
+
+## Method signature
+
+```javascript
+client.mediaContent.getMediaContent(params)
+```
+
+Retrieves media content for a specific product based on media type and optional filtering criteria.
+
+## Parameters
+
+<ParamField path="mediaType" type="string" required>
+  Type of media to retrieve. Common values include:
+  - `Image` - Product images
+  - `Video` - Product videos
+  - `Document` - Product documents
+</ParamField>
+
+<ParamField path="productId" type="string" required>
+  Unique identifier for the product.
+</ParamField>
+
+<ParamField path="partId" type="string">
+  Optional part identifier to filter media for a specific product variant.
+</ParamField>
+
+<ParamField path="classType" type="number">
+  Optional classification type for the media. Example: `1006` for high-resolution images.
+</ParamField>
+
+<ParamField path="cultureName" type="string">
+  Optional culture/language code for localized media (e.g., `en-US`, `fr-CA`).
+</ParamField>
+
+## Return value
+
+<ResponseField name="MediaContentArray" type="object[]">
+  Array of media content objects.
+  
+  <Expandable title="properties">
+    <ResponseField name="mediaType" type="string">
+      Type of media (Image, Video, Document, etc.).
+    </ResponseField>
+    
+    <ResponseField name="url" type="string">
+      URL to access the media file.
+    </ResponseField>
+    
+    <ResponseField name="classType" type="number">
+      Classification type of the media.
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Description or caption for the media.
+    </ResponseField>
+    
+    <ResponseField name="fileSize" type="number">
+      Size of the media file in bytes.
+    </ResponseField>
+    
+    <ResponseField name="width" type="number">
+      Width in pixels (for images and videos).
+    </ResponseField>
+    
+    <ResponseField name="height" type="number">
+      Height in pixels (for images and videos).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+<CodeGroup>
+
+```javascript Basic usage
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const supplier = new PromoStandards.Client({
+  id: 'account_id',
+  password: 'password',
+  endpoints: [
+    {
+      type: 'MediaContent',
+      version: '1.1.0',
+      url: 'https://supplier.com/productMedia',
+    },
+  ],
+});
+
+const mediaContentData = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Image',
+  productId: 'item_id',
+  classType: 1006,
+});
+
+console.log(mediaContentData);
+```
+
+```javascript With optional parameters
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const supplier = new PromoStandards.Client({
+  id: 'account_id',
+  password: 'password',
+  endpoints: [
+    {
+      type: 'MediaContent',
+      version: '1.1.0',
+      url: 'https://supplier.com/productMedia',
+    },
+  ],
+});
+
+const mediaContentData = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Image',
+  productId: 'item_id',
+  partId: 'variant_123',
+  classType: 1006,
+  cultureName: 'en-US',
+});
+
+console.log(mediaContentData);
+```
+
+</CodeGroup>
+
+<Info>
+  The `classType` parameter typically uses numeric codes defined by the PromoStandards specification. Common values include:
+  - `1006` - High-resolution product images
+  - `1005` - Thumbnail images
+  - `1007` - Lifestyle images
+</Info>
+
+<Tip>
+  Use the `partId` parameter when you need media specific to a product variant (e.g., different colors or sizes).
+</Tip>

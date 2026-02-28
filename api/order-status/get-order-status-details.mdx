@@ -1,0 +1,82 @@
+---
+title: "getOrderStatusDetails"
+description: "Retrieve detailed status information for orders"
+---
+
+## Method
+
+```typescript
+client.orderStatus.getOrderStatusDetails(params: GetOrderStatusDetailsParams): Promise<any>
+```
+
+Retrieves detailed status information for orders based on query type and reference number or timestamp.
+
+## Parameters
+
+<ParamField path="queryType" type="string" required>
+  The type of query to perform. Determines how the order status will be retrieved.
+</ParamField>
+
+<ParamField path="referenceNumber" type="string">
+  Reference number for the order. Used when querying by specific order reference.
+</ParamField>
+
+<ParamField path="statusTimeStamp" type="string" required>
+  Timestamp for filtering order status updates. Returns orders with status changes after this time.
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to the order status details. The response format depends on the client's configured format (JSON or XML).
+
+<ResponseField name="OrderStatusDetailsArray" type="array">
+  Array of order status detail objects
+  
+  <Expandable title="properties">
+    <ResponseField name="orderNumber" type="string">
+      Unique identifier for the order
+    </ResponseField>
+    
+    <ResponseField name="orderDate" type="string">
+      Date when the order was placed
+    </ResponseField>
+    
+    <ResponseField name="orderStatus" type="string">
+      Current status of the order
+    </ResponseField>
+    
+    <ResponseField name="lastModified" type="string">
+      Timestamp of the last status update
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'OrderStatus',
+      version: '1.0.0',
+      url: 'https://supplier.com/orderStatus',
+    },
+  ],
+});
+
+const orderStatus = await client.orderStatus.getOrderStatusDetails({
+  queryType: 'PO',
+  referenceNumber: 'PO-12345',
+  statusTimeStamp: '2024-01-01T00:00:00Z',
+});
+
+console.log(orderStatus);
+```
+
+## Related Methods
+
+- [getOrderStatusTypes](/api/order-status/get-order-status-types) - Get available order status types

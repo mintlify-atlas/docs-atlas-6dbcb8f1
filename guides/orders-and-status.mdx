@@ -1,0 +1,527 @@
+---
+title: Orders and Status
+description: Manage orders, track status, retrieve invoices, and handle shipment notifications with PromoStandards order services
+---
+
+The PromoStandards SDK provides comprehensive order management capabilities including purchase order submission, status tracking, shipment notifications, and invoice retrieval. This guide covers all order-related services.
+
+## Overview
+
+The SDK provides four order-related services:
+
+- **PurchaseOrder** - Submit purchase orders to suppliers
+- **OrderStatus** - Track order status and details
+- **OrderShipmentNotification** - Receive shipment updates
+- **Invoice** - Retrieve invoices for completed orders
+
+## Setup
+
+Configure your client with the necessary order endpoints:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const supplier = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'PurchaseOrder',
+      version: '1.0.0',
+      url: 'https://supplier.com/purchaseOrder',
+    },
+    {
+      type: 'OrderStatus',
+      version: '1.0.0',
+      url: 'https://supplier.com/orderStatus',
+    },
+    {
+      type: 'OrderShipmentNotification',
+      version: '1.0.0',
+      url: 'https://supplier.com/shipmentNotification',
+    },
+    {
+      type: 'Invoice',
+      version: '1.0.0',
+      url: 'https://supplier.com/invoice',
+    },
+  ],
+});
+```
+
+## Submitting Purchase Orders
+
+<Steps>
+  <Step title="Prepare order data">
+    Build your purchase order with all required information:
+
+    ```javascript
+    const orderData = {
+      orderType: 'Regular',
+      orderNumber: 'PO-2024-001',
+      orderDate: '2024-03-15T10:00:00Z',
+      totalAmount: 1250.00,
+      rush: false,
+      currency: 'USD',
+      termsAndConditions: 'Net 30',
+      shipments: [
+        {
+          allowConsolidation: true,
+          blindShip: false,
+          packingListRequired: true,
+          freightDetails: {
+            carrier: 'UPS',
+            service: 'Ground',
+          },
+          shipTo: {
+            shipmentId: 1,
+            attentionTo: 'John Doe',
+            companyName: 'ABC Company',
+            address1: '123 Main St',
+            city: 'New York',
+            region: 'NY',
+            postalCode: '10001',
+            country: 'US',
+            email: 'john@example.com',
+            phone: '555-0100',
+          },
+        },
+      ],
+      lineItems: [
+        {
+          lineNumber: 1,
+          description: 'Blue T-Shirt - Large',
+          lineType: 'New',
+          quantity: {
+            uom: 'EA',
+            value: 100,
+          },
+          toleranceDetails: {
+            tolerance: 5,
+          },
+          allowPartialShipments: true,
+          unitPrice: 10.00,
+          lineItemTotal: 1000.00,
+          requestedShipDate: '2024-04-01T00:00:00Z',
+          productId: 'SHIRT-001',
+        },
+      ],
+    };
+    ```
+  </Step>
+
+  <Step title="Submit the order">
+    Send the purchase order to the supplier:
+
+    ```javascript
+    const response = await supplier.purchaseOrder.sendPO(orderData);
+
+    if (response?.POResponse) {
+      console.log('Order submitted successfully');
+      console.log('Order ID:', response.POResponse.orderNumber);
+      console.log('Status:', response.POResponse.status);
+    }
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  The purchase order structure is complex. Refer to the templates.ts:403 for the complete structure.
+</Note>
+
+## Tracking Order Status
+
+### Getting Order Status Types
+
+First, retrieve the available status types from the supplier:
+
+```javascript
+const statusTypes = await supplier.orderStatus.getOrderStatusTypes({});
+
+if (statusTypes?.StatusTypeArray) {
+  for (const status of statusTypes.StatusTypeArray) {
+    console.log(`${status.statusId}: ${status.statusName}`);
+  }
+}
+```
+
+### Checking Order Status Details
+
+Track a specific order's status:
+
+```javascript
+const orderStatus = await supplier.orderStatus.getOrderStatusDetails({
+  queryType: 1, // Query by purchase order number
+  referenceNumber: 'PO-2024-001',
+  statusTimeStamp: '2024-01-01T00:00:00Z',
+});
+
+if (orderStatus?.OrderStatusArray) {
+  for (const order of orderStatus.OrderStatusArray) {
+    console.log('Order:', order.orderNumber);
+    console.log('Status:', order.orderStatus);
+    console.log('Status Time:', order.statusTime);
+  }
+}
+```
+
+### Query Types
+
+| Query Type | Description |
+|------------|-------------|
+| 1 | Query by Purchase Order Number |
+| 2 | Query by Customer Order Number |
+| 3 | Query by Tracking Number |
+| 4 | Query by all orders since timestamp |
+
+```javascript
+// Get all orders updated since a specific date
+const recentOrders = await supplier.orderStatus.getOrderStatusDetails({
+  queryType: 4,
+  statusTimeStamp: '2024-03-01T00:00:00Z',
+});
+```
+
+## Retrieving Shipment Notifications
+
+Get shipment tracking information:
+
+```javascript
+const shipments = await supplier.orderShipmentNotification
+  .getOrderShipmentNotification({
+    queryType: 1, // Query by purchase order number
+    referenceNumber: 'PO-2024-001',
+  });
+
+if (shipments?.ShipmentNotificationArray) {
+  for (const shipment of shipments.ShipmentNotificationArray) {
+    console.log('Tracking Number:', shipment.trackingNumber);
+    console.log('Carrier:', shipment.carrier);
+    console.log('Ship Date:', shipment.shipDate);
+    console.log('Estimated Delivery:', shipment.estimatedDeliveryDate);
+  }
+}
+```
+
+### Query by Timestamp
+
+Retrieve all shipments since a specific date:
+
+```javascript
+const recentShipments = await supplier.orderShipmentNotification
+  .getOrderShipmentNotification({
+    queryType: 2, // Query by timestamp
+    shipmentDateTimeStamp: '2024-03-01T00:00:00Z',
+  });
+```
+
+## Retrieving Invoices
+
+Get invoice information for orders:
+
+```javascript
+const invoices = await supplier.invoice.getInvoices({
+  productId: 'SHIRT-001',
+  queryType: 1, // Query by purchase order number
+  referenceNumber: 'PO-2024-001',
+});
+
+if (invoices?.InvoiceArray) {
+  for (const invoice of invoices.InvoiceArray) {
+    console.log('Invoice Number:', invoice.invoiceNumber);
+    console.log('Invoice Date:', invoice.invoiceDate);
+    console.log('Amount:', invoice.totalAmount);
+    console.log('Currency:', invoice.currency);
+  }
+}
+```
+
+### Invoice Query Types
+
+| Query Type | Description |
+|------------|-------------|
+| 1 | Query by Purchase Order Number |
+| 2 | Query by Invoice Date |
+| 3 | Query by Timestamp |
+
+```javascript
+// Get invoices by date
+const invoicesByDate = await supplier.invoice.getInvoices({
+  productId: 'SHIRT-001',
+  queryType: 2,
+  requestedDate: '2024-03-15',
+});
+
+// Get invoices since timestamp
+const recentInvoices = await supplier.invoice.getInvoices({
+  productId: 'SHIRT-001',
+  queryType: 3,
+  availableTimeStamp: '2024-03-01T00:00:00Z',
+});
+```
+
+## Complete Order Workflow
+
+Here's a complete example that places an order and tracks it through fulfillment:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+async function placeAndTrackOrder() {
+  const supplier = new PromoStandards.Client({
+    id: 'account_id',
+    password: 'password',
+    endpoints: [
+      {
+        type: 'PurchaseOrder',
+        version: '1.0.0',
+        url: 'https://supplier.com/purchaseOrder',
+      },
+      {
+        type: 'OrderStatus',
+        version: '1.0.0',
+        url: 'https://supplier.com/orderStatus',
+      },
+      {
+        type: 'OrderShipmentNotification',
+        version: '1.0.0',
+        url: 'https://supplier.com/shipmentNotification',
+      },
+      {
+        type: 'Invoice',
+        version: '1.0.0',
+        url: 'https://supplier.com/invoice',
+      },
+    ],
+  });
+
+  const orderNumber = `PO-${Date.now()}`;
+
+  try {
+    // Step 1: Submit purchase order
+    console.log('Submitting order...');
+    const orderResponse = await supplier.purchaseOrder.sendPO({
+      orderType: 'Regular',
+      orderNumber: orderNumber,
+      orderDate: new Date().toISOString(),
+      totalAmount: 1000.00,
+      rush: false,
+      currency: 'USD',
+      termsAndConditions: 'Net 30',
+      shipments: [
+        {
+          allowConsolidation: true,
+          blindShip: false,
+          packingListRequired: true,
+          freightDetails: {
+            carrier: 'UPS',
+            service: 'Ground',
+          },
+          shipTo: {
+            shipmentId: 1,
+            companyName: 'Test Company',
+            address1: '123 Main St',
+            city: 'New York',
+            region: 'NY',
+            postalCode: '10001',
+            country: 'US',
+            email: 'test@example.com',
+            phone: '555-0100',
+          },
+        },
+      ],
+      lineItems: [
+        {
+          lineNumber: 1,
+          description: 'T-Shirt - Large',
+          lineType: 'New',
+          quantity: { uom: 'EA', value: 100 },
+          toleranceDetails: { tolerance: 5 },
+          allowPartialShipments: true,
+          unitPrice: 10.00,
+          lineItemTotal: 1000.00,
+          productId: 'SHIRT-001',
+        },
+      ],
+    });
+
+    console.log('Order submitted:', orderNumber);
+
+    // Step 2: Wait a moment, then check status
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    console.log('Checking order status...');
+    const status = await supplier.orderStatus.getOrderStatusDetails({
+      queryType: 1,
+      referenceNumber: orderNumber,
+      statusTimeStamp: new Date(Date.now() - 86400000).toISOString(),
+    });
+
+    if (status?.OrderStatusArray?.[0]) {
+      console.log('Current status:', status.OrderStatusArray[0].orderStatus);
+    }
+
+    // Step 3: Check for shipment notifications
+    console.log('Checking shipments...');
+    const shipments = await supplier.orderShipmentNotification
+      .getOrderShipmentNotification({
+        queryType: 1,
+        referenceNumber: orderNumber,
+      });
+
+    if (shipments?.ShipmentNotificationArray?.length > 0) {
+      console.log('Shipments found:');
+      for (const shipment of shipments.ShipmentNotificationArray) {
+        console.log(`  Tracking: ${shipment.trackingNumber}`);
+        console.log(`  Carrier: ${shipment.carrier}`);
+      }
+    } else {
+      console.log('No shipments yet');
+    }
+
+    // Step 4: Check for invoices
+    console.log('Checking invoices...');
+    const invoices = await supplier.invoice.getInvoices({
+      productId: 'SHIRT-001',
+      queryType: 1,
+      referenceNumber: orderNumber,
+    });
+
+    if (invoices?.InvoiceArray?.length > 0) {
+      console.log('Invoices found:');
+      for (const invoice of invoices.InvoiceArray) {
+        console.log(`  Invoice #${invoice.invoiceNumber}`);
+        console.log(`  Amount: $${invoice.totalAmount}`);
+      }
+    } else {
+      console.log('No invoices yet');
+    }
+  } catch (error) {
+    console.error('Error in order workflow:', error);
+  }
+}
+
+placeAndTrackOrder();
+```
+
+## Order Contact Types
+
+When submitting purchase orders, you can include multiple contact types:
+
+```javascript
+orderContactArray: [
+  {
+    contactType: 'Billing',
+    attentionTo: 'Accounts Payable',
+    companyName: 'ABC Company',
+    address1: '456 Finance Blvd',
+    city: 'New York',
+    region: 'NY',
+    postalCode: '10002',
+    country: 'US',
+    email: 'ap@example.com',
+  },
+  {
+    contactType: 'Acknowledgement',
+    email: 'orders@example.com',
+  },
+]
+```
+
+## Digital Proofs
+
+Request digital proofs for decorated products:
+
+```javascript
+digitalProof: {
+  required: true,
+  addresses: [
+    {
+      type: 'To',
+      email: 'designer@example.com',
+      lineItemGroupingId: 1,
+    },
+  ],
+}
+```
+
+<Warning>
+  Digital proof approval may delay order processing. Set realistic ship dates when proofs are required.
+</Warning>
+
+## Method Reference
+
+### sendPO
+
+See templates.ts:403 for the complete purchase order structure. Key parameters:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `orderType` | string | Yes | Regular, Sample, etc. |
+| `orderNumber` | string | Yes | Your PO number |
+| `orderDate` | string | Yes | ISO 8601 timestamp |
+| `totalAmount` | number | Yes | Order total amount |
+| `currency` | string | Yes | Currency code |
+| `shipments` | array | Yes | Shipment details array |
+| `lineItems` | array | Yes | Line items array |
+
+### getOrderStatusDetails
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `queryType` | number | Yes | Query type (1-4) |
+| `statusTimeStamp` | string | Yes | ISO 8601 timestamp |
+| `referenceNumber` | string | No | PO or order number |
+
+### getOrderShipmentNotification
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `queryType` | number | Yes | 1=PO number, 2=timestamp |
+| `referenceNumber` | string | No | PO number |
+| `shipmentDateTimeStamp` | string | No | ISO 8601 timestamp |
+
+### getInvoices
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `productId` | string | Yes | Product identifier |
+| `queryType` | number | Yes | Query type (1-3) |
+| `referenceNumber` | string | No | PO number |
+| `requestedDate` | string | No | Date for query type 2 |
+| `availableTimeStamp` | string | No | Timestamp for query type 3 |
+
+## Best Practices
+
+<Steps>
+  <Step title="Validate before submitting">
+    Check inventory and pricing before submitting purchase orders.
+  </Step>
+
+  <Step title="Use unique order numbers">
+    Include timestamps or unique identifiers in PO numbers to avoid conflicts.
+  </Step>
+
+  <Step title="Poll status regularly">
+    Set up scheduled jobs to check order status and shipment notifications.
+  </Step>
+
+  <Step title="Handle errors gracefully">
+    Purchase order submission can fail for many reasons. Implement retry logic and user notifications.
+  </Step>
+
+  <Step title="Store tracking data">
+    Persist tracking numbers and shipment data for customer service purposes.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Pricing and Configuration" icon="dollar-sign" href="/guides/pricing-and-configuration">
+    Get pricing before placing orders
+  </Card>
+  <Card title="Managing Inventory" icon="warehouse" href="/guides/managing-inventory">
+    Validate stock before orders
+  </Card>
+</CardGroup>

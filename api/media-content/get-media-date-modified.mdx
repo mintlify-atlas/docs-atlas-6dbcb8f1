@@ -1,0 +1,108 @@
+---
+title: 'Get media date modified'
+description: 'Retrieve the last modified timestamp for media content to efficiently sync and update product media.'
+keywords: ['media', 'date modified', 'timestamp', 'sync', 'updates']
+---
+
+## Method signature
+
+```javascript
+client.mediaContent.getMediaDateModified(params)
+```
+
+Retrieves the last modified timestamp for media content. This is useful for determining when to update cached media or for incremental synchronization.
+
+## Parameters
+
+<ParamField path="cultureName" type="string">
+  Optional culture/language code for localized media (e.g., `en-US`, `fr-CA`).
+</ParamField>
+
+<ParamField path="changeTimeStamp" type="string">
+  Optional timestamp in ISO 8601 format. Returns only media modified after this timestamp. Useful for incremental updates.
+</ParamField>
+
+## Return value
+
+<ResponseField name="MediaDateModifiedArray" type="object[]">
+  Array of media date modified objects.
+  
+  <Expandable title="properties">
+    <ResponseField name="productId" type="string">
+      Unique identifier for the product.
+    </ResponseField>
+    
+    <ResponseField name="lastModified" type="string">
+      ISO 8601 timestamp of when the media was last modified.
+    </ResponseField>
+    
+    <ResponseField name="mediaType" type="string">
+      Type of media that was modified (Image, Video, Document, etc.).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+<CodeGroup>
+
+```javascript Basic usage
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const supplier = new PromoStandards.Client({
+  id: 'account_id',
+  password: 'password',
+  endpoints: [
+    {
+      type: 'MediaContent',
+      version: '1.1.0',
+      url: 'https://supplier.com/productMedia',
+    },
+  ],
+});
+
+const dateModifiedData = await supplier.mediaContent.getMediaDateModified({
+  cultureName: 'en-US',
+});
+
+console.log(dateModifiedData);
+```
+
+```javascript Incremental sync
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const supplier = new PromoStandards.Client({
+  id: 'account_id',
+  password: 'password',
+  endpoints: [
+    {
+      type: 'MediaContent',
+      version: '1.1.0',
+      url: 'https://supplier.com/productMedia',
+    },
+  ],
+});
+
+// Get media modified since last sync
+const lastSyncTime = '2024-01-01T00:00:00Z';
+const dateModifiedData = await supplier.mediaContent.getMediaDateModified({
+  changeTimeStamp: lastSyncTime,
+  cultureName: 'en-US',
+});
+
+// Update only products that have been modified
+for (const item of dateModifiedData) {
+  console.log(`Product ${item.productId} media updated at ${item.lastModified}`);
+  // Fetch updated media using getMediaContent()
+}
+```
+
+</CodeGroup>
+
+<Tip>
+  Use `changeTimeStamp` to implement efficient incremental synchronization. Store the timestamp of your last successful sync and use it in subsequent calls to retrieve only updated media.
+</Tip>
+
+<Info>
+  This method is particularly useful for maintaining a local cache of product media without having to re-download all media files on every sync.
+</Info>

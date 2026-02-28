@@ -1,0 +1,50 @@
+---
+title: 'Get available charges'
+description: 'Retrieve available charges and fees for products'
+---
+
+Retrieves all available charges and fees that can be applied to a product order, including setup fees, decoration charges, and other applicable costs.
+
+## Method signature
+
+```javascript
+await client.productPricingAndConfiguration.getAvailableCharges(params)
+```
+
+## Parameters
+
+<ParamField path="productId" type="string">
+  The unique identifier for the product. If not provided, returns all general charges.
+</ParamField>
+
+<ParamField path="localizationCountry" type="string" required>
+  Country code for localization (e.g., "US", "CA")
+</ParamField>
+
+<ParamField path="localizationLanguage" type="string" required>
+  Language code for localization (e.g., "en", "fr")
+</ParamField>
+
+## Returns
+
+Returns a promise that resolves to an array of available charges, including:
+
+- Charge identifier and name
+- Charge type (setup, run, additional)
+- Description of the charge
+- Pricing information
+- Applicable conditions
+- Quantity-based pricing tiers
+
+## Example
+
+```javascript
+const charges =
+  await client.productPricingAndConfiguration.getAvailableCharges({
+    productId: 'item_id',
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+  });
+
+console.log(charges);
+```

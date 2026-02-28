@@ -1,0 +1,447 @@
+---
+title: Response Formats
+description: Understanding XML and JSON response formats and how the SDK handles conversion
+---
+
+## Overview
+
+PromoStandards APIs return responses in XML format by default (SOAP protocol requirement). The SDK provides automatic conversion to JSON for easier JavaScript/TypeScript integration.
+
+## Choosing a Response Format
+
+The SDK supports two response formats, controlled by the `format` parameter:
+
+```javascript
+import { PromoStandards } from 'promostandards';
+
+// JSON responses (default)
+const jsonClient = new PromoStandards.Client({
+  id: 'username',
+  password: 'password',
+  endpoints: [/* ... */],
+  format: 'json' // Default
+});
+
+// XML responses
+const xmlClient = new PromoStandards.Client({
+  id: 'username',
+  password: 'password',
+  endpoints: [/* ... */],
+  format: 'xml'
+});
+```
+
+### When to Use Each Format
+
+<CardGroup cols={2}>
+  <Card title="JSON (Recommended)" icon="brackets-curly">
+    - Default and most convenient for JavaScript/TypeScript
+    - Easy to work with in modern applications
+    - Native JavaScript object manipulation
+    - Ideal for most use cases
+  </Card>
+  <Card title="XML" icon="code">
+    - When you need raw SOAP responses
+    - Custom XML parsing requirements
+    - Debugging or logging raw responses
+    - Integration with XML-based systems
+  </Card>
+</CardGroup>
+
+## JSON Response Format (Default)
+
+By default, the SDK automatically converts XML responses to JSON using the `convertXMLtoJSON` utility.
+
+### Example JSON Response
+
+```javascript
+const client = new PromoStandards.Client({
+  id: 'username',
+  password: 'password',
+  endpoints: [{
+    type: 'ProductData',
+    version: '2.0.0',
+    url: 'https://api.supplier.com/ProductData'
+  }],
+  format: 'json'
+});
+
+const result = await client.productData.getProduct({
+  productId: 'ABC123',
+  localizationCountry: 'US',
+  localizationLanguage: 'en'
+});
+
+// Result is a JavaScript object
+console.log(result.Envelope.Body.getProductResponse);
+```
+
+### Working with JSON Responses
+
+```javascript
+// Access nested data easily
+const productData = result.Envelope.Body.getProductResponse.Product;
+
+console.log(productData.productId);        // 'ABC123'
+console.log(productData.productName);      // 'Custom T-Shirt'
+console.log(productData.Description);      // Product description
+
+// Arrays are automatically handled
+if (productData.ColorArray) {
+  productData.ColorArray.forEach(color => {
+    console.log(color.colorName, color.hex);
+  });
+}
+```
+
+## XML Response Format
+
+When `format: 'xml'` is specified, the SDK returns raw XML strings from the SOAP service:
+
+```javascript
+const client = new PromoStandards.Client({
+  id: 'username',
+  password: 'password',
+  endpoints: [/* ... */],
+  format: 'xml'
+});
+
+const xmlResult = await client.productData.getProduct({
+  productId: 'ABC123',
+  localizationCountry: 'US',
+  localizationLanguage: 'en'
+});
+
+// xmlResult is a string
+console.log(typeof xmlResult); // 'string'
+```
+
+### Example XML Response
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <ns:getProductResponse xmlns:ns="http://www.promostandards.org/WSDL/ProductDataService/2.0.0/">
+      <Product>
+        <productId>ABC123</productId>
+        <productName>Custom T-Shirt</productName>
+        <Description>High-quality cotton t-shirt</Description>
+        <ColorArray>
+          <Color>
+            <colorName>Red</colorName>
+            <hex>#FF0000</hex>
+          </Color>
+          <Color>
+            <colorName>Blue</colorName>
+            <hex>#0000FF</hex>
+          </Color>
+        </ColorArray>
+      </Product>
+    </ns:getProductResponse>
+  </soap:Body>
+</soap:Envelope>
+```
+
+## XML to JSON Conversion Process
+
+The SDK uses the `convertXMLtoJSON` utility (from Utils.ts:29-50) to transform XML responses:
+
+### Conversion Implementation
+
+```typescript
+export const convertXMLtoJSON = (xml: string): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    xml2js.parseString(
+      xml,
+      {
+        explicitArray: false, // Only create arrays for multiple records
+        ignoreAttrs: true,    // Ignore XML attributes
+        tagNameProcessors: [xml2js.processors.stripPrefix], // Remove namespace prefixes
+        valueProcessors: [
+          xml2js.processors.parseNumbers,   // Convert numeric strings to numbers
+          xml2js.processors.parseBooleans,  // Convert 'true'/'false' to booleans
+        ],
+      },
+      (err: any, data: any) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(replaceArrayTagsWithArrays(data));
+      }
+    );
+  });
+};
+```
+
+### Conversion Features
+
+<AccordionGroup>
+  <Accordion title="Namespace Stripping">
+    XML namespaces are automatically removed for cleaner JSON keys:
+    
+    ```xml
+    <!-- XML with namespace -->
+    <ns:getProductResponse>
+      <ns:Product>
+        <ns:productId>ABC123</ns:productId>
+      </ns:Product>
+    </ns:getProductResponse>
+    ```
+    
+    ```json
+    // JSON without namespace prefixes
+    {
+      "getProductResponse": {
+        "Product": {
+          "productId": "ABC123"
+        }
+      }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Type Conversion">
+    String values are automatically converted to appropriate types:
+    
+    ```xml
+    <!-- XML strings -->
+    <quantity>100</quantity>
+    <available>true</available>
+    <price>29.99</price>
+    ```
+    
+    ```json
+    // JSON with native types
+    {
+      "quantity": 100,        // number
+      "available": true,      // boolean
+      "price": 29.99          // number
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Array Handling">
+    The SDK intelligently handles arrays using two mechanisms:
+    
+    **1. explicitArray: false**
+    
+    Single items are NOT wrapped in arrays, multiple items are:
+    
+    ```json
+    // Single color - not an array
+    { "Color": { "colorName": "Red" } }
+    
+    // Multiple colors - array
+    { "Color": [{ "colorName": "Red" }, { "colorName": "Blue" }] }
+    ```
+    
+    **2. Array Tag Detection**
+    
+    Tags ending in "Array" are forced to arrays (Utils.ts:16-27):
+    
+    ```typescript
+    export const replaceArrayTagsWithArrays = (obj: any) => {
+      let key;
+      if (obj instanceof Object) {
+        for (key in obj) {
+          if (obj.hasOwnProperty(key) && /.*Array/.test(key)) {
+            obj[key] = ensureArray(skipLevel(obj[key]));
+          }
+          replaceArrayTagsWithArrays(obj[key]);
+        }
+      }
+      return obj;
+    };
+    ```
+    
+    ```xml
+    <!-- XML with Array tag -->
+    <ColorArray>
+      <Color>Red</Color>
+    </ColorArray>
+    ```
+    
+    ```json
+    // Guaranteed to be an array
+    {
+      "ColorArray": ["Red"]  // Always an array, even with one item
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Attribute Handling">
+    XML attributes are ignored by default (`ignoreAttrs: true`):
+    
+    ```xml
+    <!-- XML with attributes -->
+    <Product id="123" status="active">
+      <productName>T-Shirt</productName>
+    </Product>
+    ```
+    
+    ```json
+    // Attributes are not included
+    {
+      "Product": {
+        "productName": "T-Shirt"
+      }
+    }
+    ```
+    
+    <Note>
+    PromoStandards rarely uses XML attributes, so this simplifies the JSON structure.
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+## How Format is Applied
+
+From PromoStandards.ts:147-151, the format is checked before returning the response:
+
+```typescript
+axios
+  .post(endpoint.url, requestXML, {
+    headers: {
+      'Content-Type': 'text/xml',
+      SOAPAction: method,
+    },
+  })
+  .then((result: any) => {
+    this.format === 'json'
+      ? resolve(Utils.convertXMLtoJSON(result.data))  // Convert to JSON
+      : resolve(result.data);                         // Return raw XML
+  })
+  .catch((error: Error) => reject(error));
+```
+
+<Steps>
+  <Step title="SOAP Request">
+    SDK sends XML request to supplier endpoint
+  </Step>
+  <Step title="XML Response">
+    Supplier returns XML response (SOAP envelope)
+  </Step>
+  <Step title="Format Check">
+    SDK checks the `format` setting (`json` or `xml`)
+  </Step>
+  <Step title="Conversion">
+    If `json`, converts using `convertXMLtoJSON()`, otherwise returns raw XML
+  </Step>
+  <Step title="Promise Resolution">
+    Returns formatted response to your application
+  </Step>
+</Steps>
+
+## Handling Arrays in JSON Responses
+
+PromoStandards responses contain many arrays (colors, sizes, pricing, etc.). The SDK handles these intelligently:
+
+### Safe Array Access
+
+```javascript
+// Always check if array exists and has items
+const colors = result?.Envelope?.Body?.getProductResponse?.Product?.ColorArray;
+
+if (colors && Array.isArray(colors)) {
+  colors.forEach(color => {
+    console.log(color.colorName);
+  });
+} else if (colors) {
+  // Single item, not an array
+  console.log(colors.colorName);
+}
+```
+
+### Using ensureArray Helper
+
+The SDK's internal `ensureArray` utility (Utils.ts:4) can be useful:
+
+```javascript
+const ensureArray = (obj) => obj instanceof Array ? obj : [obj];
+
+// Now you can safely iterate
+const colors = ensureArray(
+  result?.Envelope?.Body?.getProductResponse?.Product?.ColorArray
+);
+
+colors.forEach(color => {
+  console.log(color.colorName);
+});
+```
+
+## Response Format Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use JSON by Default" icon="check">
+    JSON is easier to work with in JavaScript and is the recommended format for most applications.
+  </Card>
+  <Card title="Handle Missing Data" icon="shield">
+    Always use optional chaining (`?.`) when accessing nested response properties.
+  </Card>
+  <Card title="Validate Arrays" icon="list">
+    Check if array fields are actually arrays before iterating, or use `ensureArray`.
+  </Card>
+  <Card title="Log Raw Responses" icon="bug">
+    During debugging, temporarily switch to XML format to see raw SOAP responses.
+  </Card>
+</CardGroup>
+
+## Debugging with XML Format
+
+When troubleshooting API issues, XML format helps you see the raw SOAP response:
+
+```javascript
+// Temporarily use XML format for debugging
+const debugClient = new PromoStandards.Client({
+  id: 'username',
+  password: 'password',
+  endpoints: [/* ... */],
+  format: 'xml'
+});
+
+const xmlResponse = await debugClient.productData.getProduct(params);
+console.log('Raw SOAP Response:', xmlResponse);
+
+// Check for SOAP faults or unexpected structure
+if (xmlResponse.includes('soap:Fault')) {
+  console.error('SOAP Fault detected!');
+}
+```
+
+## Switching Formats Dynamically
+
+The format is set during client initialization, but you can create multiple clients:
+
+```javascript
+const baseConfig = {
+  id: process.env.SUPPLIER_USERNAME,
+  password: process.env.SUPPLIER_PASSWORD,
+  endpoints: [/* ... */]
+};
+
+const jsonClient = new PromoStandards.Client({
+  ...baseConfig,
+  format: 'json'
+});
+
+const xmlClient = new PromoStandards.Client({
+  ...baseConfig,
+  format: 'xml'
+});
+
+// Use based on need
+const jsonData = await jsonClient.productData.getProduct(params);
+const xmlData = await xmlClient.productData.getProduct(params);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Client Configuration" icon="gear" href="/concepts/client-configuration">
+    Learn about configuring the PromoStandards Client
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/concepts/error-handling">
+    Handle errors in API responses
+  </Card>
+</CardGroup>

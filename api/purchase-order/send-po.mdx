@@ -1,0 +1,432 @@
+---
+title: "sendPO"
+description: "Submit a purchase order to the supplier"
+---
+
+## Method
+
+```typescript
+client.purchaseOrder.sendPO(params: SendPOParams): Promise<any>
+```
+
+Submits a purchase order to the supplier with complete order details including line items, shipment information, and configuration.
+
+## Parameters
+
+<ParamField path="orderType" type="string" required>
+  Type of order being submitted (e.g., "New", "Change", "Cancel")
+</ParamField>
+
+<ParamField path="orderNumber" type="string" required>
+  Unique order number for this purchase order
+</ParamField>
+
+<ParamField path="orderDate" type="string" required>
+  Date when the order was created
+</ParamField>
+
+<ParamField path="lastModified" type="string">
+  Timestamp of the last modification to this order
+</ParamField>
+
+<ParamField path="totalAmount" type="number" required>
+  Total amount for the entire order
+</ParamField>
+
+<ParamField path="rush" type="boolean" required>
+  Indicates whether this is a rush order
+</ParamField>
+
+<ParamField path="currency" type="string" required>
+  Currency code for pricing (e.g., "USD", "CAD")
+</ParamField>
+
+<ParamField path="digitalProof" type="object">
+  Digital proof requirements
+  
+  <Expandable title="properties">
+    <ParamField path="required" type="boolean" required>
+      Whether a digital proof is required
+    </ParamField>
+    
+    <ParamField path="addresses" type="array">
+      Array of email addresses for digital proof delivery
+      
+      <Expandable title="address properties">
+        <ParamField path="type" type="string">
+          Type of address (e.g., "To", "CC", "BCC")
+        </ParamField>
+        
+        <ParamField path="email" type="string">
+          Email address for proof delivery
+        </ParamField>
+        
+        <ParamField path="lineItemGroupingId" type="string">
+          Line item grouping identifier
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="orderContactArray" type="array">
+  Array of contact information for the order
+  
+  <Expandable title="contact properties">
+    <ParamField path="contactType" type="string">
+      Type of contact (e.g., "Buyer", "Shipping")
+    </ParamField>
+    
+    <ParamField path="attentionTo" type="string">
+      Attention line for the contact
+    </ParamField>
+    
+    <ParamField path="companyName" type="string">
+      Company name
+    </ParamField>
+    
+    <ParamField path="address1" type="string">
+      Primary address line
+    </ParamField>
+    
+    <ParamField path="address2" type="string">
+      Secondary address line
+    </ParamField>
+    
+    <ParamField path="city" type="string">
+      City
+    </ParamField>
+    
+    <ParamField path="region" type="string">
+      State or region
+    </ParamField>
+    
+    <ParamField path="postalCode" type="string">
+      Postal or ZIP code
+    </ParamField>
+    
+    <ParamField path="country" type="string">
+      Country code
+    </ParamField>
+    
+    <ParamField path="phone" type="string">
+      Phone number
+    </ParamField>
+    
+    <ParamField path="email" type="string">
+      Email address
+    </ParamField>
+    
+    <ParamField path="comments" type="string">
+      Additional comments
+    </ParamField>
+    
+    <ParamField path="accountName" type="string">
+      Account name
+    </ParamField>
+    
+    <ParamField path="accountNumber" type="string">
+      Account number
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="shipments" type="array" required>
+  Array of shipment information
+  
+  <Expandable title="shipment properties">
+    <ParamField path="allowConsolidation" type="boolean">
+      Whether shipment consolidation is allowed
+    </ParamField>
+    
+    <ParamField path="blindShip" type="boolean">
+      Whether this is a blind shipment
+    </ParamField>
+    
+    <ParamField path="packingListRequired" type="boolean">
+      Whether a packing list is required
+    </ParamField>
+    
+    <ParamField path="freightDetails" type="object">
+      Freight carrier and service information
+      
+      <Expandable title="properties">
+        <ParamField path="carrier" type="string">
+          Shipping carrier name
+        </ParamField>
+        
+        <ParamField path="service" type="string">
+          Shipping service level
+        </ParamField>
+      </Expandable>
+    </ParamField>
+    
+    <ParamField path="customerPickup" type="boolean">
+      Whether customer will pick up
+    </ParamField>
+    
+    <ParamField path="shipTo" type="object">
+      Shipping destination details
+      
+      <Expandable title="properties">
+        <ParamField path="shipmentId" type="string">
+          Unique shipment identifier
+        </ParamField>
+        
+        <ParamField path="attentionTo" type="string">
+          Recipient name
+        </ParamField>
+        
+        <ParamField path="companyName" type="string">
+          Company name
+        </ParamField>
+        
+        <ParamField path="address1" type="string">
+          Primary address
+        </ParamField>
+        
+        <ParamField path="address2" type="string">
+          Secondary address
+        </ParamField>
+        
+        <ParamField path="address3" type="string">
+          Additional address line
+        </ParamField>
+        
+        <ParamField path="city" type="string">
+          City
+        </ParamField>
+        
+        <ParamField path="region" type="string">
+          State or region
+        </ParamField>
+        
+        <ParamField path="postalCode" type="string">
+          Postal code
+        </ParamField>
+        
+        <ParamField path="country" type="string">
+          Country code
+        </ParamField>
+        
+        <ParamField path="email" type="string">
+          Email address
+        </ParamField>
+        
+        <ParamField path="phone" type="string">
+          Phone number
+        </ParamField>
+        
+        <ParamField path="comments" type="string">
+          Shipping comments
+        </ParamField>
+      </Expandable>
+    </ParamField>
+    
+    <ParamField path="thirdPartyAccount" type="object">
+      Third-party billing account information
+    </ParamField>
+    
+    <ParamField path="shipReferences" type="string">
+      Shipment reference information
+    </ParamField>
+    
+    <ParamField path="comments" type="string">
+      Additional shipment comments
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="lineItems" type="array">
+  Array of line items in the purchase order
+  
+  <Expandable title="line item properties">
+    <ParamField path="lineNumber" type="number">
+      Line item number
+    </ParamField>
+    
+    <ParamField path="description" type="string">
+      Item description
+    </ParamField>
+    
+    <ParamField path="lineType" type="string">
+      Type of line item
+    </ParamField>
+    
+    <ParamField path="quantity" type="object">
+      Quantity details
+      
+      <Expandable title="properties">
+        <ParamField path="uom" type="string">
+          Unit of measure
+        </ParamField>
+        
+        <ParamField path="value" type="number">
+          Quantity value
+        </ParamField>
+      </Expandable>
+    </ParamField>
+    
+    <ParamField path="fobId" type="string">
+      FOB point identifier
+    </ParamField>
+    
+    <ParamField path="toleranceDetails" type="object">
+      Tolerance information
+      
+      <Expandable title="properties">
+        <ParamField path="tolerance" type="number">
+          Tolerance percentage
+        </ParamField>
+      </Expandable>
+    </ParamField>
+    
+    <ParamField path="allowPartialShipments" type="boolean">
+      Whether partial shipments are allowed
+    </ParamField>
+    
+    <ParamField path="unitPrice" type="number">
+      Price per unit
+    </ParamField>
+    
+    <ParamField path="lineItemTotal" type="number">
+      Total for this line item
+    </ParamField>
+    
+    <ParamField path="requestedShipDate" type="string">
+      Requested ship date
+    </ParamField>
+    
+    <ParamField path="requestedInHands" type="string">
+      Requested in-hands date
+    </ParamField>
+    
+    <ParamField path="referenceSalesQuote" type="string">
+      Reference to sales quote
+    </ParamField>
+    
+    <ParamField path="endCustomerSalesOrder" type="string">
+      End customer sales order number
+    </ParamField>
+    
+    <ParamField path="productId" type="string">
+      Product identifier
+    </ParamField>
+    
+    <ParamField path="customerProductId" type="string">
+      Customer's product identifier
+    </ParamField>
+    
+    <ParamField path="lineItemGroupingId" type="string">
+      Line item grouping identifier
+    </ParamField>
+    
+    <ParamField path="configuration" type="object">
+      Product configuration and decoration details
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="termsAndConditions" type="string" required>
+  Terms and conditions for the purchase order
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to the purchase order submission response.
+
+<ResponseField name="ServiceMessageArray" type="array">
+  Array of service messages indicating success or errors
+  
+  <Expandable title="properties">
+    <ResponseField name="code" type="string">
+      Response code
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Description of the response
+    </ResponseField>
+    
+    <ResponseField name="severity" type="string">
+      Severity level (e.g., "Information", "Error", "Warning")
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="poReferenceNumber" type="string">
+  Reference number assigned by the supplier for this purchase order
+</ResponseField>
+
+## Example
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'PurchaseOrder',
+      version: '1.0.0',
+      url: 'https://supplier.com/purchaseOrder',
+    },
+  ],
+});
+
+const poResponse = await client.purchaseOrder.sendPO({
+  orderType: 'New',
+  orderNumber: 'PO-12345',
+  orderDate: '2024-01-15',
+  totalAmount: 1500.00,
+  rush: false,
+  currency: 'USD',
+  shipments: [
+    {
+      allowConsolidation: true,
+      blindShip: false,
+      packingListRequired: true,
+      freightDetails: {
+        carrier: 'UPS',
+        service: 'Ground',
+      },
+      shipTo: {
+        shipmentId: '1',
+        companyName: 'ACME Corp',
+        address1: '123 Main St',
+        city: 'New York',
+        region: 'NY',
+        postalCode: '10001',
+        country: 'US',
+      },
+      shipReferences: 'REF-001',
+    },
+  ],
+  lineItems: [
+    {
+      lineNumber: 1,
+      description: 'Custom T-Shirt',
+      lineType: 'New',
+      quantity: {
+        uom: 'EA',
+        value: 100,
+      },
+      toleranceDetails: {
+        tolerance: 5,
+      },
+      allowPartialShipments: false,
+      unitPrice: 12.50,
+      lineItemTotal: 1250.00,
+      productId: 'TSHIRT-001',
+    },
+  ],
+  termsAndConditions: 'Standard terms and conditions apply',
+});
+
+console.log(poResponse);
+```
+
+## Related Methods
+
+- [getOrderStatusDetails](/api/order-status/get-order-status-details) - Track the status of submitted orders
+- [getOrderShipmentNotification](/api/order-shipment/get-order-shipment-notification) - Get shipment notifications

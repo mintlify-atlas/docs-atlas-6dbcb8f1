@@ -1,0 +1,301 @@
+---
+title: 'Types'
+description: 'TypeScript types and interfaces for the PromoStandards SDK'
+---
+
+## ServiceType
+
+Enum representing the available PromoStandards service types.
+
+```typescript
+type ServiceType =
+  | "Inventory"
+  | "Invoice"
+  | "MediaContent"
+  | "OrderShipmentNotification"
+  | "OrderStatus"
+  | "ProductData"
+  | "ProductPricingAndConfiguration"
+  | "PurchaseOrder";
+```
+
+### Values
+
+<ParamField path="Inventory" type="string">
+  Service for checking product inventory levels and availability
+</ParamField>
+
+<ParamField path="Invoice" type="string">
+  Service for retrieving invoice information
+</ParamField>
+
+<ParamField path="MediaContent" type="string">
+  Service for accessing product media content and images
+</ParamField>
+
+<ParamField path="OrderShipmentNotification" type="string">
+  Service for retrieving order shipment notifications
+</ParamField>
+
+<ParamField path="OrderStatus" type="string">
+  Service for checking order status information
+</ParamField>
+
+<ParamField path="ProductData" type="string">
+  Service for accessing product information and details
+</ParamField>
+
+<ParamField path="ProductPricingAndConfiguration" type="string">
+  Service for product pricing and configuration options
+</ParamField>
+
+<ParamField path="PurchaseOrder" type="string">
+  Service for submitting purchase orders
+</ParamField>
+
+## ServiceEndpointType
+
+Interface defining the structure of a service endpoint configuration.
+
+```typescript
+type ServiceEndpointType = {
+  type: ServiceType;
+  version: string;
+  url: string;
+};
+```
+
+### Properties
+
+<ParamField path="type" type="ServiceType" required>
+  The PromoStandards service type. See [ServiceType](#servicetype) for valid values.
+</ParamField>
+
+<ParamField path="version" type="string" required>
+  The version of the PromoStandards service (e.g., `"1.0.0"`, `"1.2.1"`). Should follow semantic versioning.
+</ParamField>
+
+<ParamField path="url" type="string" required>
+  The full URL endpoint for the service (e.g., `"https://api.supplier.com/ProductData"`)
+</ParamField>
+
+### Example
+
+```javascript
+const endpoint = {
+  type: 'ProductData',
+  version: '1.0.0',
+  url: 'https://api.supplier.com/ProductData'
+};
+```
+
+## MethodType
+
+Enum representing all available PromoStandards API method names.
+
+```typescript
+type MethodType =
+  | "getFilterValues"
+  | "getInventoryLevels"
+  | "getMediaContent"
+  | "getMediaDateModified"
+  | "getOrderShipmentNotification"
+  | "getOrderStatusDetails"
+  | "getOrderStatusTypes"
+  | "getProduct"
+  | "getProductDateModified"
+  | "getProductSellable"
+  | "getProductCloseOut"
+  | "getAvailableLocations"
+  | "getDecorationColors"
+  | "getFobPoints"
+  | "getAvailableCharges"
+  | "GetConfigurationAndPricing"
+  | "getSupportedOrderTypes"
+  | "sendPO";
+```
+
+### Values
+
+<ParamField path="getFilterValues" type="string">
+  Get available filter values for inventory queries
+</ParamField>
+
+<ParamField path="getInventoryLevels" type="string">
+  Get current inventory levels for products
+</ParamField>
+
+<ParamField path="getMediaContent" type="string">
+  Get media content for a product
+</ParamField>
+
+<ParamField path="getMediaDateModified" type="string">
+  Get media content modified after a specific date
+</ParamField>
+
+<ParamField path="getOrderShipmentNotification" type="string">
+  Get shipment notification details for an order
+</ParamField>
+
+<ParamField path="getOrderStatusDetails" type="string">
+  Get detailed status information for an order
+</ParamField>
+
+<ParamField path="getOrderStatusTypes" type="string">
+  Get available order status types
+</ParamField>
+
+<ParamField path="getProduct" type="string">
+  Get detailed product information
+</ParamField>
+
+<ParamField path="getProductDateModified" type="string">
+  Get products modified after a specific date
+</ParamField>
+
+<ParamField path="getProductSellable" type="string">
+  Get sellable product information
+</ParamField>
+
+<ParamField path="getProductCloseOut" type="string">
+  Get close-out product information
+</ParamField>
+
+<ParamField path="getAvailableLocations" type="string">
+  Get available decoration locations for a product
+</ParamField>
+
+<ParamField path="getDecorationColors" type="string">
+  Get available decoration colors
+</ParamField>
+
+<ParamField path="getFobPoints" type="string">
+  Get FOB (Freight on Board) points
+</ParamField>
+
+<ParamField path="getAvailableCharges" type="string">
+  Get available charges for product configuration
+</ParamField>
+
+<ParamField path="GetConfigurationAndPricing" type="string">
+  Get complete configuration and pricing information
+</ParamField>
+
+<ParamField path="getSupportedOrderTypes" type="string">
+  Get supported order types
+</ParamField>
+
+<ParamField path="sendPO" type="string">
+  Submit a purchase order to the supplier
+</ParamField>
+
+## ResponseFormatType
+
+Enum representing the available response format types.
+
+```typescript
+type ResponseFormatType = "xml" | "json";
+```
+
+### Values
+
+<ParamField path="xml" type="string">
+  Return API responses in XML format
+</ParamField>
+
+<ParamField path="json" type="string">
+  Return API responses in JSON format (default)
+</ParamField>
+
+### Example
+
+```javascript
+const client = new PromoStandards.Client({
+  id: 'username',
+  password: 'password',
+  format: 'json' // or 'xml'
+});
+```
+
+## PromoStandardsBaseAttributes
+
+Interface defining the base attributes for PromoStandards client configuration.
+
+```typescript
+interface PromoStandardsBaseAttributes {
+  id?: string;
+  password?: string;
+  endpoints?: ServiceEndpointType[];
+  format?: ResponseFormatType;
+}
+```
+
+### Properties
+
+<ParamField path="id" type="string" optional>
+  Username provided by the supplier for authentication
+</ParamField>
+
+<ParamField path="password" type="string" optional>
+  Password provided by the supplier for authentication
+</ParamField>
+
+<ParamField path="endpoints" type="ServiceEndpointType[]" optional>
+  Array of service endpoint configurations. See [ServiceEndpointType](#serviceendpointtype) for details.
+</ParamField>
+
+<ParamField path="format" type="ResponseFormatType" optional>
+  Response format type. Can be `"json"` or `"xml"`. Defaults to `"json"`.
+</ParamField>
+
+### Example
+
+```javascript
+const config = {
+  id: 'supplier-username',
+  password: 'supplier-password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '1.0.0',
+      url: 'https://api.supplier.com/ProductData'
+    },
+    {
+      type: 'Inventory',
+      version: '1.2.1',
+      url: 'https://api.supplier.com/Inventory'
+    }
+  ],
+  format: 'json'
+};
+
+const client = new PromoStandards.Client(config);
+```
+
+## Usage in TypeScript
+
+When using the SDK in TypeScript, you can import and use these types for type safety:
+
+```typescript
+import { PromoStandards } from 'promostandards';
+
+// Type your endpoint configurations
+const endpoints: PromoStandards.ServiceEndpointType[] = [
+  {
+    type: 'ProductData',
+    version: '1.0.0',
+    url: 'https://api.supplier.com/ProductData'
+  }
+];
+
+// Type your client configuration
+const config: PromoStandards.PromoStandardsBaseAttributes = {
+  id: 'username',
+  password: 'password',
+  endpoints: endpoints,
+  format: 'json'
+};
+
+// Create a typed client
+const client = new PromoStandards.Client(config);
+```

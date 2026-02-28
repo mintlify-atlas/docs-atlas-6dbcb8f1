@@ -1,0 +1,126 @@
+---
+title: 'Get inventory levels'
+description: 'Retrieve current inventory levels for a product with optional filtering.'
+keywords: ['inventory', 'stock', 'levels', 'availability', 'filter']
+---
+
+## Method signature
+
+```javascript
+client.inventory.getInventoryLevels(params)
+```
+
+Retrieves current inventory levels for a specified product. This method queries the supplier's Inventory service to get real-time stock availability.
+
+## Parameters
+
+<ParamField path="body.productId" type="string" required>
+  The unique identifier for the product. This is the supplier's product ID.
+</ParamField>
+
+<ParamField path="body.productIDtype" type="string">
+  The type of product identifier being used. Only applicable for version 1.2.1.
+</ParamField>
+
+<ParamField path="body.filters" type="object">
+  Optional filters to narrow down inventory results by specific parts, sizes, or colors.
+  
+  <Expandable title="properties">
+    <ParamField path="body.filters.partIdArray" type="string[]">
+      Array of part IDs to filter inventory results. Only inventory for these specific parts will be returned.
+    </ParamField>
+    
+    <ParamField path="body.filters.LabelSizeArray" type="string[]">
+      Array of label sizes to filter inventory results. Only inventory for these specific sizes will be returned.
+    </ParamField>
+    
+    <ParamField path="body.filters.PartColorArray" type="string[]">
+      Array of part colors to filter inventory results. Only inventory for these specific colors will be returned.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Return value
+
+Returns a Promise that resolves to the inventory levels data. The response format depends on the client's configured `format` option (JSON or XML).
+
+<ResponseField name="success" type="boolean">
+  Indicates whether the request was successful.
+</ResponseField>
+
+<ResponseField name="inventoryLevels" type="object[]">
+  Array of inventory level records for the requested product.
+  
+  <Expandable title="properties">
+    <ResponseField name="partId" type="string">
+      The unique identifier for the product part.
+    </ResponseField>
+    
+    <ResponseField name="quantity" type="number">
+      Available quantity in stock.
+    </ResponseField>
+    
+    <ResponseField name="attributeColor" type="string">
+      Color attribute of the part.
+    </ResponseField>
+    
+    <ResponseField name="labelSize" type="string">
+      Size label for the part.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Code example
+
+<CodeGroup>
+
+```javascript Basic usage
+const inventoryData = await client.inventory.getInventoryLevels({
+  productId: 'item_id'
+});
+
+console.log(inventoryData);
+```
+
+```javascript With filters
+const inventoryData = await client.inventory.getInventoryLevels({
+  productId: 'item_id',
+  filters: {
+    partIdArray: ['part_001', 'part_002'],
+    LabelSizeArray: ['S', 'M', 'L'],
+    PartColorArray: ['Red', 'Blue']
+  }
+});
+
+console.log(inventoryData);
+```
+
+```javascript Complete example
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'account_id',
+  password: 'password',
+  endpoints: [
+    {
+      type: 'Inventory',
+      version: '2.0.0',
+      url: 'https://supplier.com/inventory'
+    }
+  ]
+});
+
+const inventoryData = await client.inventory.getInventoryLevels({
+  productId: 'item_id'
+});
+
+console.log(JSON.stringify(inventoryData, null, 2));
+```
+
+</CodeGroup>
+
+## Related methods
+
+<Card title="Get filter values" icon="filter" href="/api/inventory/get-filter-values">
+  Retrieve available filter values for a product
+</Card>

@@ -1,0 +1,305 @@
+---
+title: Authentication
+description: Understanding how authentication works in the PromoStandards SDK
+---
+
+## Overview
+
+PromoStandards uses a simple username/password authentication scheme. Credentials are provided by suppliers and included in every SOAP request to authenticate your application.
+
+## How Authentication Works
+
+Authentication credentials are configured when creating a PromoStandards Client and automatically included in all API requests:
+
+```javascript
+import { PromoStandards } from 'promostandards';
+
+const client = new PromoStandards.Client({
+  id: 'your-username',
+  password: 'your-password',
+  endpoints: [/* ... */]
+});
+```
+
+### Authentication Flow
+
+1. **Client Initialization**: Credentials are stored in the client instance
+2. **API Request**: When calling any service method, the SDK builds a SOAP XML request
+3. **Credential Injection**: The `id` and `password` are automatically injected into the SOAP envelope
+4. **Transmission**: Credentials are sent with every request to authenticate with the supplier's API
+5. **Validation**: The supplier validates credentials and processes the request
+
+<Steps>
+  <Step title="Initialize Client">
+    Create a Client instance with supplier-provided credentials
+  </Step>
+  <Step title="Make API Call">
+    Call any service method (e.g., `productData.getProduct()`)
+  </Step>
+  <Step title="Automatic Authentication">
+    SDK injects credentials into the SOAP request automatically
+  </Step>
+  <Step title="Supplier Validates">
+    Supplier authenticates your request and returns data
+  </Step>
+</Steps>
+
+## Credential Source
+
+### Supplier-Provided Credentials
+
+Authentication credentials come directly from your PromoStandards-compliant supplier. Each supplier provides:
+
+- **Username** (`id`): Your unique identifier for API access
+- **Password**: Secret key for authentication
+- **Service Endpoints**: URLs for each PromoStandards service they support
+
+<Note>
+Credentials are supplier-specific. If you integrate with multiple suppliers, you'll need separate credentials for each.
+</Note>
+
+### Example Multi-Supplier Setup
+
+```javascript
+// Supplier A
+const supplierA = new PromoStandards.Client({
+  id: process.env.SUPPLIER_A_USERNAME,
+  password: process.env.SUPPLIER_A_PASSWORD,
+  endpoints: [/* Supplier A endpoints */]
+});
+
+// Supplier B
+const supplierB = new PromoStandards.Client({
+  id: process.env.SUPPLIER_B_USERNAME,
+  password: process.env.SUPPLIER_B_PASSWORD,
+  endpoints: [/* Supplier B endpoints */]
+});
+```
+
+## Implementation Details
+
+From the SDK source code (PromoStandards.ts:79-92), the Client constructor accepts optional authentication parameters:
+
+```typescript
+/**
+ * Create a new PromoStandards Client
+ * @param {Object} options - Options for the client
+ * @param {string} options.id - Username provided by the supplier
+ * @param {string} options.password - Password provided by the supplier
+ * @param {ServiceEndpointType[]} options.endpoints - List of endpoint objects
+ * @param {('json'|'xml')} options.format - Response format type (default: "json")
+ */
+constructor(options: PromoStandardsBaseAttributes = {}) {
+  this.id = options.id;
+  this.password = options.password;
+  this.endpoints = options.endpoints;
+  this.format = options.format || this.format;
+}
+```
+
+### Request Processing
+
+When making an API call (PromoStandards.ts:115-154), credentials are merged into the SOAP template:
+
+```typescript
+const requestXML: string = soapTemplateIndex[method](
+  Object.assign(
+    {
+      id: this.id,          // Username injected here
+      password: this.password, // Password injected here
+      wsVersion: endpoint.version,
+      majorVersion: Utils.majorVersion(endpoint.version),
+    },
+    params
+  )
+);
+```
+
+The SDK then sends this XML to the supplier's endpoint with proper SOAP headers:
+
+```typescript
+axios.post(endpoint.url, requestXML, {
+  headers: {
+    'Content-Type': 'text/xml',
+    SOAPAction: method,
+  },
+});
+```
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Never Hardcode Credentials">
+    Always use environment variables or secure secret management systems. Never commit credentials to version control.
+    
+    ```javascript
+    // ❌ BAD - Hardcoded credentials
+    const client = new PromoStandards.Client({
+      id: 'myusername',
+      password: 'mypassword123'
+    });
+    
+    // ✅ GOOD - Environment variables
+    const client = new PromoStandards.Client({
+      id: process.env.PS_USERNAME,
+      password: process.env.PS_PASSWORD
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Use Environment Variables">
+    Store credentials in `.env` files (excluded from version control) or environment configuration:
+    
+    ```bash
+    # .env file
+    SUPPLIER_USERNAME=your-username
+    SUPPLIER_PASSWORD=your-secure-password
+    PRODUCT_DATA_ENDPOINT=https://api.supplier.com/ProductData
+    ```
+    
+    ```javascript
+    require('dotenv').config();
+    
+    const client = new PromoStandards.Client({
+      id: process.env.SUPPLIER_USERNAME,
+      password: process.env.SUPPLIER_PASSWORD,
+      endpoints: [/* ... */]
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Rotate Credentials Regularly">
+    Work with your suppliers to rotate API credentials periodically as part of security hygiene.
+  </Accordion>
+  
+  <Accordion title="Limit Credential Exposure">
+    - Use dedicated service accounts with minimal permissions
+    - Restrict credential access to only necessary team members
+    - Monitor API usage for suspicious activity
+  </Accordion>
+  
+  <Accordion title="Use HTTPS Endpoints">
+    Always verify that supplier endpoints use HTTPS to ensure credentials are transmitted securely:
+    
+    ```javascript
+    // ✅ GOOD - HTTPS endpoint
+    url: 'https://api.supplier.com/ProductData'
+    
+    // ❌ BAD - HTTP endpoint (insecure)
+    url: 'http://api.supplier.com/ProductData'
+    ```
+  </Accordion>
+  
+  <Accordion title="Secret Management Services">
+    For production environments, consider using secret management services:
+    
+    - AWS Secrets Manager
+    - Azure Key Vault
+    - HashiCorp Vault
+    - Google Cloud Secret Manager
+    
+    ```javascript
+    // Example: AWS Secrets Manager
+    const AWS = require('aws-sdk');
+    const client = new AWS.SecretsManager();
+    
+    const secret = await client.getSecretValue({
+      SecretId: 'promostandards/supplier-credentials'
+    }).promise();
+    
+    const credentials = JSON.parse(secret.SecretString);
+    
+    const psClient = new PromoStandards.Client({
+      id: credentials.username,
+      password: credentials.password,
+      endpoints: [/* ... */]
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+Authentication failures typically result in SOAP faults or HTTP errors. Always handle authentication errors gracefully:
+
+```javascript
+try {
+  const result = await client.productData.getProduct({
+    productId: 'ABC123',
+    localizationCountry: 'US',
+    localizationLanguage: 'en'
+  });
+  console.log(result);
+} catch (error) {
+  if (error.response?.status === 401 || error.response?.status === 403) {
+    console.error('Authentication failed: Invalid credentials');
+    // Handle authentication error
+  } else {
+    console.error('Request failed:', error.message);
+  }
+}
+```
+
+<Warning>
+Some suppliers may return a 200 status with a SOAP fault in the response body instead of HTTP error codes. Always check the response structure for error indicators.
+</Warning>
+
+## Testing Authentication
+
+Verify your credentials are working correctly:
+
+```javascript
+const testAuthentication = async () => {
+  const client = new PromoStandards.Client({
+    id: process.env.SUPPLIER_USERNAME,
+    password: process.env.SUPPLIER_PASSWORD,
+    endpoints: [
+      {
+        type: 'ProductData',
+        version: '2.0.0',
+        url: process.env.PRODUCT_DATA_ENDPOINT
+      }
+    ]
+  });
+
+  try {
+    // Simple test: get product sellable list
+    const result = await client.productData.getProductSellable();
+    console.log('✅ Authentication successful');
+    return true;
+  } catch (error) {
+    console.error('❌ Authentication failed:', error.message);
+    return false;
+  }
+};
+
+testAuthentication();
+```
+
+## Common Authentication Issues
+
+<CardGroup cols={2}>
+  <Card title="Invalid Credentials" icon="circle-xmark">
+    Double-check username and password with your supplier. Credentials are case-sensitive.
+  </Card>
+  <Card title="Expired Credentials" icon="clock">
+    Some suppliers expire credentials periodically. Contact your supplier for renewal.
+  </Card>
+  <Card title="IP Restrictions" icon="shield">
+    Some suppliers whitelist IP addresses. Verify your server IP is authorized.
+  </Card>
+  <Card title="Missing Credentials" icon="question">
+    Ensure credentials are loaded before making API calls. Check environment variables are set.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Client Configuration" icon="gear" href="/concepts/client-configuration">
+    Learn more about configuring the PromoStandards Client
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/concepts/error-handling">
+    Understand how to handle authentication and other errors
+  </Card>
+</CardGroup>

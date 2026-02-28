@@ -1,0 +1,107 @@
+---
+title: getProductCloseOut
+description: Retrieve a list of products that are being closed out or discontinued by the supplier
+---
+
+## Method Signature
+
+```typescript
+client.productData.getProductCloseOut(params?: GetProductCloseOutParams): Promise<any>
+```
+
+Retrieves a list of all products that are being closed out or discontinued by the supplier. This method helps identify clearance items and products that will no longer be available.
+
+## Parameters
+
+This method does not require any specific parameters beyond the authentication credentials that are automatically included from the client configuration.
+
+<Note>
+  Authentication credentials (`id` and `password`) are automatically included from the client configuration and do not need to be passed as parameters.
+</Note>
+
+## Returns
+
+<ResponseField name="ProductCloseOutArray" type="array">
+  Array of products that are being closed out
+  
+  <Expandable title="Close out product details">
+    <ResponseField name="productId" type="string">
+      The product identifier being closed out
+    </ResponseField>
+    
+    <ResponseField name="productName" type="string">
+      The name of the product
+    </ResponseField>
+    
+    <ResponseField name="partId" type="string">
+      Specific part/variant identifier (if applicable)
+    </ResponseField>
+    
+    <ResponseField name="closeOutDate" type="string">
+      The date when the product will be or was closed out
+    </ResponseField>
+    
+    <ResponseField name="availableQuantity" type="number">
+      Remaining quantity available before closeout
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '2.0.0',
+      url: 'https://supplier.com/productData'
+    }
+  ]
+});
+
+// Get all products being closed out
+const closeOutProducts = await client.productData.getProductCloseOut();
+
+console.log(closeOutProducts);
+
+// Process close-out items
+if (closeOutProducts && closeOutProducts.length > 0) {
+  console.log(`Found ${closeOutProducts.length} products being closed out`);
+  
+  closeOutProducts.forEach(product => {
+    console.log(`Product ${product.productId} - ${product.productName}`);
+    console.log(`Close-out date: ${product.closeOutDate}`);
+    console.log(`Available quantity: ${product.availableQuantity}`);
+  });
+}
+```
+
+## Use Cases
+
+- **Clearance Sales**: Identify products for special clearance promotions
+- **Inventory Planning**: Plan for product discontinuation and find replacement items
+- **Last Chance Purchases**: Alert customers about products that won't be restocked
+- **Catalog Management**: Remove or flag products that are being phased out
+
+## Best Practices
+
+- Call this method regularly (e.g., weekly) to stay updated on supplier closeouts
+- Cross-reference with inventory levels to determine purchase urgency
+- Notify customers who previously purchased or favorited closeout items
+- Consider bulk purchasing closeout items if you have consistent demand
+
+## Related Methods
+
+- Use [`getProductSellable`](/api/product-data/get-product-sellable) to check if closeout products are still sellable
+- Use [`getProduct`](/api/product-data/get-product) to get full details about closeout products
+- Check inventory levels with `getInventoryLevels` to see remaining stock
+
+## PromoStandards Documentation
+
+For more details on the Product Data service, refer to the official PromoStandards documentation:
+[Product Data Service 2.0.0](https://tools.promostandards.org/product-data-2-0-0)

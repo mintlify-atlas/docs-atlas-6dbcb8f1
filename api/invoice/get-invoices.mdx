@@ -1,0 +1,134 @@
+---
+title: "getInvoices"
+description: "Retrieve invoice information from the supplier"
+---
+
+## Method
+
+```typescript
+client.invoice.getInvoices(params: GetInvoicesParams): Promise<any>
+```
+
+Retrieves invoice information from the supplier based on query criteria such as product ID, reference number, or date range.
+
+## Parameters
+
+<ParamField path="productId" type="string" required>
+  Product identifier for filtering invoices
+</ParamField>
+
+<ParamField path="queryType" type="string" required>
+  The type of query to perform (e.g., "PO", "Invoice", "Customer")
+</ParamField>
+
+<ParamField path="referenceNumber" type="string">
+  Reference number for filtering invoices. Can be a PO number, invoice number, or customer reference depending on queryType.
+</ParamField>
+
+<ParamField path="requestedDate" type="string">
+  Specific date to query for invoices (format: YYYY-MM-DD)
+</ParamField>
+
+<ParamField path="availableTimeStamp" type="string">
+  Timestamp for filtering invoices. Returns invoices created or modified after this time.
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to the invoice data. The response format depends on the client's configured format (JSON or XML).
+
+<ResponseField name="InvoiceArray" type="array">
+  Array of invoice objects
+  
+  <Expandable title="properties">
+    <ResponseField name="invoiceNumber" type="string">
+      Unique invoice number
+    </ResponseField>
+    
+    <ResponseField name="invoiceDate" type="string">
+      Date the invoice was created
+    </ResponseField>
+    
+    <ResponseField name="orderNumber" type="string">
+      Associated purchase order number
+    </ResponseField>
+    
+    <ResponseField name="totalAmount" type="number">
+      Total invoice amount
+    </ResponseField>
+    
+    <ResponseField name="currency" type="string">
+      Currency code for the invoice (e.g., "USD", "CAD")
+    </ResponseField>
+    
+    <ResponseField name="invoiceLineItems" type="array">
+      Array of line items on the invoice
+      
+      <Expandable title="line item properties">
+        <ResponseField name="lineNumber" type="number">
+          Line item number
+        </ResponseField>
+        
+        <ResponseField name="description" type="string">
+          Item description
+        </ResponseField>
+        
+        <ResponseField name="quantity" type="number">
+          Quantity invoiced
+        </ResponseField>
+        
+        <ResponseField name="unitPrice" type="number">
+          Price per unit
+        </ResponseField>
+        
+        <ResponseField name="lineTotal" type="number">
+          Total for this line item
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'Invoice',
+      version: '1.0.0',
+      url: 'https://supplier.com/invoice',
+    },
+  ],
+});
+
+const invoices = await client.invoice.getInvoices({
+  productId: 'TSHIRT-001',
+  queryType: 'PO',
+  referenceNumber: 'PO-12345',
+});
+
+console.log(invoices);
+```
+
+## Example with Timestamp
+
+```javascript
+// Get all invoices modified after a specific time
+const recentInvoices = await client.invoice.getInvoices({
+  productId: 'TSHIRT-001',
+  queryType: 'PO',
+  availableTimeStamp: '2024-01-01T00:00:00Z',
+});
+
+console.log(recentInvoices);
+```
+
+## Related Methods
+
+- [sendPO](/api/purchase-order/send-po) - Submit a purchase order
+- [getOrderStatusDetails](/api/order-status/get-order-status-details) - Get order status information

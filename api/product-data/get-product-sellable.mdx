@@ -1,0 +1,104 @@
+---
+title: getProductSellable
+description: Query products based on their sellable status to identify available or discontinued items
+---
+
+## Method Signature
+
+```typescript
+client.productData.getProductSellable(params: GetProductSellableParams): Promise<any>
+```
+
+Retrieves a list of products or parts based on their sellable status. This method helps you identify which products are currently available for sale or which have been discontinued.
+
+## Parameters
+
+<ParamField path="isSellable" type="boolean" required>
+  Filter products by sellable status. Use `true` to get currently sellable products, or `false` to get products that are no longer sellable
+</ParamField>
+
+<ParamField path="productId" type="string">
+  Optional product identifier to check sellable status for a specific product
+</ParamField>
+
+<ParamField path="partId" type="string">
+  Optional part identifier to check sellable status for a specific part/variant
+</ParamField>
+
+## Returns
+
+<ResponseField name="ProductSellableArray" type="array">
+  Array of products and their sellable status information
+  
+  <Expandable title="Product sellable details">
+    <ResponseField name="productId" type="string">
+      The product identifier
+    </ResponseField>
+    
+    <ResponseField name="partId" type="string">
+      The part/variant identifier
+    </ResponseField>
+    
+    <ResponseField name="isSellable" type="boolean">
+      Current sellable status of the product or part
+    </ResponseField>
+    
+    <ResponseField name="lastModified" type="string">
+      Timestamp when the sellable status was last modified
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '2.0.0',
+      url: 'https://supplier.com/productData'
+    }
+  ]
+});
+
+// Get all currently sellable products
+const sellableProducts = await client.productData.getProductSellable({
+  isSellable: true
+});
+
+console.log(sellableProducts);
+
+// Check if a specific product is sellable
+const productStatus = await client.productData.getProductSellable({
+  productId: 'ITEM-12345',
+  isSellable: true
+});
+
+// Get all discontinued products
+const discontinuedProducts = await client.productData.getProductSellable({
+  isSellable: false
+});
+
+// Check sellable status for a specific part
+const partStatus = await client.productData.getProductSellable({
+  productId: 'ITEM-12345',
+  partId: 'ITEM-12345-BLK-L',
+  isSellable: true
+});
+```
+
+## Use Cases
+
+- **Catalog Synchronization**: Regularly sync your catalog to ensure you're only displaying sellable products
+- **Inventory Management**: Identify products that need to be removed from your active inventory
+- **Product Lifecycle**: Track which products are being phased out or discontinued
+
+## PromoStandards Documentation
+
+For more details on the Product Data service, refer to the official PromoStandards documentation:
+[Product Data Service 2.0.0](https://tools.promostandards.org/product-data-2-0-0)

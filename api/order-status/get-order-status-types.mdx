@@ -1,0 +1,64 @@
+---
+title: "getOrderStatusTypes"
+description: "Get the list of available order status types"
+---
+
+## Method
+
+```typescript
+client.orderStatus.getOrderStatusTypes(): Promise<any>
+```
+
+Retrieves the list of available order status types supported by the supplier.
+
+## Parameters
+
+This method does not require any additional parameters beyond the client authentication credentials.
+
+## Returns
+
+Returns a Promise that resolves to the available order status types. The response format depends on the client's configured format (JSON or XML).
+
+<ResponseField name="OrderStatusTypeArray" type="array">
+  Array of available order status types
+  
+  <Expandable title="properties">
+    <ResponseField name="statusId" type="string">
+      Unique identifier for the status type
+    </ResponseField>
+    
+    <ResponseField name="statusName" type="string">
+      Human-readable name of the status type
+    </ResponseField>
+    
+    <ResponseField name="description" type="string">
+      Description of what this status type represents
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'OrderStatus',
+      version: '1.0.0',
+      url: 'https://supplier.com/orderStatus',
+    },
+  ],
+});
+
+const statusTypes = await client.orderStatus.getOrderStatusTypes();
+
+console.log(statusTypes);
+```
+
+## Related Methods
+
+- [getOrderStatusDetails](/api/order-status/get-order-status-details) - Get detailed status information for orders

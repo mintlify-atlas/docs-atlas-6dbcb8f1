@@ -1,0 +1,107 @@
+---
+title: Installation
+description: Install the PromoStandards SDK for JavaScript in your project
+---
+
+This guide walks you through installing the PromoStandards SDK and setting up your development environment.
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- **Node.js 16.x or higher** - The SDK requires Node.js version 16 or later
+- **npm, yarn, or pnpm** - A package manager to install the SDK
+- **PromoStandards credentials** - Account ID and password from your supplier
+- **API endpoints** - Service URLs provided by your supplier
+
+<Tip>
+  Most promotional product suppliers provide PromoStandards credentials through their developer portal or account settings.
+</Tip>
+
+## Install the package
+
+<Steps>
+  <Step title="Install via your package manager">
+    Choose your preferred package manager to install the SDK:
+
+    <CodeGroup>
+      ```bash npm
+      npm install promostandards-sdk-js --save
+      ```
+
+      ```bash yarn
+      yarn add promostandards-sdk-js
+      ```
+
+      ```bash pnpm
+      pnpm add promostandards-sdk-js
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Verify installation">
+    Confirm the SDK is installed by checking your `package.json` file:
+
+    ```json package.json
+    {
+      "dependencies": {
+        "promostandards-sdk-js": "^0.1.11"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## TypeScript setup
+
+The SDK includes built-in TypeScript type definitions. If you're using TypeScript, you'll get full type safety and autocomplete support out of the box.
+
+<CodeGroup>
+  ```typescript TypeScript
+  import { PromoStandards } from 'promostandards-sdk-js';
+
+  // TypeScript will provide full type checking and autocomplete
+  const client = new PromoStandards.Client({
+    id: 'your-account-id',
+    password: 'your-password',
+    endpoints: [
+      // Your endpoints configuration
+    ],
+  });
+  ```
+
+  ```javascript JavaScript
+  const { PromoStandards } = require('promostandards-sdk-js');
+
+  // Works with regular JavaScript too
+  const client = new PromoStandards.Client({
+    id: 'your-account-id',
+    password: 'your-password',
+    endpoints: [
+      // Your endpoints configuration
+    ],
+  });
+  ```
+</CodeGroup>
+
+<Note>
+  No additional type packages are needed. The SDK ships with complete TypeScript definitions.
+</Note>
+
+## Node.js version requirements
+
+The SDK requires **Node.js 16.x or higher**. To check your Node.js version:
+
+```bash
+node --version
+```
+
+If you need to upgrade Node.js, visit [nodejs.org](https://nodejs.org) or use a version manager like [nvm](https://github.com/nvm-sh/nvm).
+
+## Next steps
+
+Now that you have the SDK installed, you're ready to initialize a client and make your first API call.
+
+<Card title="Quickstart guide" icon="rocket" href="/quickstart">
+  Learn how to configure the client and make your first API request
+</Card>

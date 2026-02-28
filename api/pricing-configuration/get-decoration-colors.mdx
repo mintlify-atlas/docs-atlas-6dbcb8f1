@@ -1,0 +1,58 @@
+---
+title: 'Get decoration colors'
+description: 'Retrieve available decoration colors for a specific location'
+---
+
+Retrieves all available decoration colors for a specific decoration location on a product, including color codes and names.
+
+## Method signature
+
+```javascript
+await client.productPricingAndConfiguration.getDecorationColors(params)
+```
+
+## Parameters
+
+<ParamField path="locationId" type="string" required>
+  The decoration location identifier
+</ParamField>
+
+<ParamField path="productId" type="string" required>
+  The unique identifier for the product
+</ParamField>
+
+<ParamField path="decorationId" type="string">
+  The specific decoration method identifier
+</ParamField>
+
+<ParamField path="localizationCountry" type="string" required>
+  Country code for localization (e.g., "US", "CA")
+</ParamField>
+
+<ParamField path="localizationLanguage" type="string" required>
+  Language code for localization (e.g., "en", "fr")
+</ParamField>
+
+## Returns
+
+Returns a promise that resolves to an array of available decoration colors, including:
+
+- Color identifier and name
+- Color codes (Pantone, RGB, hex)
+- Color availability status
+- Color-specific pricing information
+- Color swatches or images
+
+## Example
+
+```javascript
+const colors =
+  await client.productPricingAndConfiguration.getDecorationColors({
+    locationId: 'FRONT',
+    productId: 'item_id',
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+  });
+
+console.log(colors);
+```

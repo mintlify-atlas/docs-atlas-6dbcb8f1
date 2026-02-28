@@ -1,0 +1,358 @@
+---
+title: Managing Inventory
+description: Check real-time inventory levels and filter product variants using the PromoStandards Inventory service
+---
+
+The Inventory service provides real-time access to product stock levels across different variants, sizes, and colors. This guide shows you how to check availability and use filters effectively.
+
+## Overview
+
+The Inventory service offers two key methods:
+
+- `getInventoryLevels` - Check real-time stock levels
+- `getFilterValues` - Get available filter options for a product
+
+## Setup
+
+Configure your client with the Inventory endpoint:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const supplier = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'Inventory',
+      version: '2.0.0',
+      url: 'https://supplier.com/inventory',
+    },
+  ],
+});
+```
+
+## Checking Inventory Levels
+
+<Steps>
+  <Step title="Get all inventory for a product">
+    Retrieve inventory levels across all variants:
+
+    ```javascript
+    const inventoryData = await supplier.inventory.getInventoryLevels({
+      productId: 'SHIRT-001',
+    });
+
+    console.log(inventoryData);
+    ```
+
+    This returns inventory for all sizes, colors, and variants of the product.
+  </Step>
+
+  <Step title="Filter by specific parts">
+    Use the `filters` parameter to narrow results to specific variants:
+
+    ```javascript
+    const filteredInventory = await supplier.inventory.getInventoryLevels({
+      productId: 'SHIRT-001',
+      filters: {
+        partIdArray: ['SHIRT-001-L', 'SHIRT-001-XL'],
+      },
+    });
+    ```
+  </Step>
+</Steps>
+
+## Understanding Filter Structure
+
+The Inventory service supports three types of filters:
+
+### Part ID Filter
+
+Filter by specific part identifiers:
+
+```javascript
+const inventory = await supplier.inventory.getInventoryLevels({
+  productId: 'SHIRT-001',
+  filters: {
+    partIdArray: [
+      'SHIRT-001-S',
+      'SHIRT-001-M',
+      'SHIRT-001-L',
+      'SHIRT-001-XL',
+    ],
+  },
+});
+```
+
+### Label Size Filter
+
+Filter by standard size labels:
+
+```javascript
+const sizeInventory = await supplier.inventory.getInventoryLevels({
+  productId: 'SHIRT-001',
+  filters: {
+    LabelSizeArray: ['Small', 'Medium', 'Large', 'X-Large'],
+  },
+});
+```
+
+<Note>
+  Size labels must match the supplier's exact naming convention. Use `getFilterValues` to discover available options.
+</Note>
+
+### Part Color Filter
+
+Filter by color variants:
+
+```javascript
+const colorInventory = await supplier.inventory.getInventoryLevels({
+  productId: 'SHIRT-001',
+  filters: {
+    PartColorArray: ['Royal Blue', 'Navy', 'Black'],
+  },
+});
+```
+
+## Combining Multiple Filters
+
+You can combine filters to get very specific inventory data:
+
+```javascript
+const specificInventory = await supplier.inventory.getInventoryLevels({
+  productId: 'SHIRT-001',
+  filters: {
+    partIdArray: ['SHIRT-001-L-BLU', 'SHIRT-001-XL-BLU'],
+    LabelSizeArray: ['Large', 'X-Large'],
+    PartColorArray: ['Royal Blue'],
+  },
+});
+
+console.log('Blue shirts in Large and X-Large:', specificInventory);
+```
+
+## Discovering Available Filters
+
+Use `getFilterValues` to see what filter options are available for a product:
+
+```javascript
+const filterOptions = await supplier.inventory.getFilterValues({
+  productId: 'SHIRT-001',
+});
+
+console.log('Available filters:', filterOptions);
+
+// Example response structure:
+// {
+//   PartIdArray: ['SHIRT-001-S', 'SHIRT-001-M', ...],
+//   LabelSizeArray: ['Small', 'Medium', 'Large', ...],
+//   PartColorArray: ['Royal Blue', 'Navy', 'Black', ...]
+// }
+```
+
+<Tip>
+  Call `getFilterValues` first to populate dropdown menus or build dynamic filter UIs.
+</Tip>
+
+## Complete Inventory Workflow
+
+Here's a practical example that checks inventory before allowing an order:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+async function checkProductAvailability(productId, requestedQuantity, size, color) {
+  const supplier = new PromoStandards.Client({
+    id: 'account_id',
+    password: 'password',
+    endpoints: [
+      {
+        type: 'Inventory',
+        version: '2.0.0',
+        url: 'https://supplier.com/inventory',
+      },
+    ],
+  });
+
+  try {
+    // Step 1: Get filter options to validate user selection
+    const filters = await supplier.inventory.getFilterValues({
+      productId: productId,
+    });
+
+    // Validate size exists
+    if (!filters.LabelSizeArray?.includes(size)) {
+      throw new Error(`Size "${size}" not available for this product`);
+    }
+
+    // Validate color exists
+    if (!filters.PartColorArray?.includes(color)) {
+      throw new Error(`Color "${color}" not available for this product`);
+    }
+
+    // Step 2: Check inventory for specific variant
+    const inventory = await supplier.inventory.getInventoryLevels({
+      productId: productId,
+      filters: {
+        LabelSizeArray: [size],
+        PartColorArray: [color],
+      },
+    });
+
+    // Step 3: Validate availability
+    if (!inventory?.InventoryArray || inventory.InventoryArray.length === 0) {
+      return {
+        available: false,
+        message: 'No inventory found for this combination',
+      };
+    }
+
+    const stock = inventory.InventoryArray[0];
+    const availableQuantity = stock.Inventory?.quantityAvailable?.value || 0;
+
+    if (availableQuantity >= requestedQuantity) {
+      return {
+        available: true,
+        quantity: availableQuantity,
+        message: `${availableQuantity} units available`,
+      };
+    } else {
+      return {
+        available: false,
+        quantity: availableQuantity,
+        message: `Only ${availableQuantity} units available (requested ${requestedQuantity})`,
+      };
+    }
+  } catch (error) {
+    console.error('Error checking inventory:', error);
+    return {
+      available: false,
+      message: error.message,
+    };
+  }
+}
+
+// Usage
+const result = await checkProductAvailability(
+  'SHIRT-001',
+  100,
+  'Large',
+  'Royal Blue'
+);
+
+if (result.available) {
+  console.log('Product is available:', result.message);
+} else {
+  console.log('Product not available:', result.message);
+}
+```
+
+## Method Reference
+
+### getInventoryLevels
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `productId` | string | Yes | Product identifier |
+| `filters` | object | No | Filter object (see below) |
+| `filters.partIdArray` | string[] | No | Array of part IDs to filter |
+| `filters.LabelSizeArray` | string[] | No | Array of size labels to filter |
+| `filters.PartColorArray` | string[] | No | Array of colors to filter |
+
+### getFilterValues
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `productId` | string | Yes | Product identifier |
+
+## Handling Inventory Data
+
+Inventory responses typically include:
+
+```javascript
+{
+  InventoryArray: [
+    {
+      productId: 'SHIRT-001',
+      partId: 'SHIRT-001-L-BLU',
+      Inventory: {
+        quantityAvailable: {
+          uom: 'EA', // Unit of measure (Each, Dozen, etc.)
+          value: 500
+        },
+        attributeSelection: {
+          labelSize: 'Large',
+          partColor: 'Royal Blue'
+        }
+      }
+    }
+  ]
+}
+```
+
+<Warning>
+  Inventory levels can change rapidly. Always check inventory immediately before submitting orders.
+</Warning>
+
+## Version Compatibility
+
+The SDK supports both Inventory service versions:
+
+- **Version 1.2.1** - Legacy format with different XML structure
+- **Version 2.0.0** - Current standard (recommended)
+
+```javascript
+// Version 2.0.0 (recommended)
+const supplier = new PromoStandards.Client({
+  endpoints: [
+    {
+      type: 'Inventory',
+      version: '2.0.0',
+      url: 'https://supplier.com/inventory/v2',
+    },
+  ],
+});
+
+// Version 1.2.1 (legacy)
+const legacySupplier = new PromoStandards.Client({
+  endpoints: [
+    {
+      type: 'Inventory',
+      version: '1.2.1',
+      url: 'https://supplier.com/inventory/legacy',
+    },
+  ],
+});
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Cache filter values">
+    Filter options change infrequently. Cache the results of `getFilterValues` for better performance.
+  </Step>
+
+  <Step title="Validate before checking inventory">
+    Use `getFilterValues` to validate user selections before making inventory requests.
+  </Step>
+
+  <Step title="Check inventory just-in-time">
+    Inventory levels change frequently. Check availability right before order submission.
+  </Step>
+
+  <Step title="Handle out-of-stock gracefully">
+    Always have fallback logic for when requested quantities aren't available.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Working with Products" icon="box-open" href="/guides/working-with-products">
+    Learn about product data retrieval
+  </Card>
+  <Card title="Orders and Status" icon="shopping-cart" href="/guides/orders-and-status">
+    Submit orders with inventory validation
+  </Card>
+</CardGroup>

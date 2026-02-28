@@ -1,0 +1,315 @@
+---
+title: 'Client'
+description: 'PromoStandards Client class for making API requests'
+---
+
+## Client
+
+The `Client` class is the main entry point for interacting with PromoStandards services. It manages authentication credentials, service endpoints, and provides methods for making API requests.
+
+### Constructor
+
+Create a new PromoStandards Client instance.
+
+```javascript
+import { PromoStandards } from 'promostandards';
+
+const client = new PromoStandards.Client({
+  id: 'your-username',
+  password: 'your-password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '1.0.0',
+      url: 'https://api.supplier.com/ProductData'
+    }
+  ],
+  format: 'json'
+});
+```
+
+#### Parameters
+
+<ParamField path="options" type="object">
+  Configuration options for the client
+
+  <ParamField path="id" type="string" optional>
+    Username provided by the supplier for authentication
+  </ParamField>
+
+  <ParamField path="password" type="string" optional>
+    Password provided by the supplier for authentication
+  </ParamField>
+
+  <ParamField path="endpoints" type="ServiceEndpointType[]" optional>
+    Array of service endpoint configurations. See [ServiceEndpointType](/api/types#serviceendpointtype) for details.
+  </ParamField>
+
+  <ParamField path="format" type="ResponseFormatType" default="json" optional>
+    Response format type. Can be `"json"` or `"xml"`. Defaults to `"json"`.
+  </ParamField>
+</ParamField>
+
+### Properties
+
+<ParamField path="id" type="string">
+  The username used for authentication with PromoStandards services
+</ParamField>
+
+<ParamField path="password" type="string">
+  The password used for authentication with PromoStandards services
+</ParamField>
+
+<ParamField path="endpoints" type="ServiceEndpointType[]">
+  Array of configured service endpoints
+</ParamField>
+
+<ParamField path="format" type="ResponseFormatType">
+  The response format for API calls. Either `"json"` or `"xml"`
+</ParamField>
+
+### Methods
+
+#### getEndpoint()
+
+Retrieves a specific service endpoint configuration.
+
+```javascript
+const endpoint = client.getEndpoint('ProductData');
+console.log(endpoint);
+// { type: 'ProductData', version: '1.0.0', url: 'https://...' }
+```
+
+<ParamField path="serviceName" type="ServiceType" required>
+  The name of the service endpoint to retrieve. See [ServiceType](/api/types#servicetype) for valid values.
+</ParamField>
+
+**Returns:** `ServiceEndpointType`
+
+**Throws:** `ReferenceError` if the specified service endpoint is not configured
+
+#### promoStandardsAPIRequest()
+
+Generic method for making PromoStandards API requests. This is the underlying method used by all service namespaces.
+
+```javascript
+const response = await client.promoStandardsAPIRequest(
+  'ProductData.getProduct',
+  {
+    productId: 'ABC123',
+    localizationCountry: 'US',
+    localizationLanguage: 'en'
+  }
+);
+```
+
+<ParamField path="serviceAndMethodName" type="string" required>
+  Service and method name in the format `"ServiceName.methodName"` (e.g., `"ProductData.getProduct"`)
+</ParamField>
+
+<ParamField path="params" type="any" required>
+  Parameters required for the specified PromoStandards method
+</ParamField>
+
+**Returns:** `Promise<any>` - Resolves with the API response in the format specified by the `format` property
+
+### Service Namespaces
+
+The Client provides convenient namespaced methods for each PromoStandards service. Each method is a wrapper around `promoStandardsAPIRequest()`.
+
+#### productData
+
+Methods for accessing product information.
+
+```javascript
+const product = await client.productData.getProduct({
+  productId: 'ABC123',
+  localizationCountry: 'US',
+  localizationLanguage: 'en'
+});
+```
+
+<ParamField path="getProduct" type="function">
+  Get detailed product information
+</ParamField>
+
+<ParamField path="getProductSellable" type="function">
+  Get sellable product information
+</ParamField>
+
+<ParamField path="getProductDateModified" type="function">
+  Get products modified after a specific date
+</ParamField>
+
+<ParamField path="getProductCloseOut" type="function">
+  Get close-out product information
+</ParamField>
+
+#### mediaContent
+
+Methods for accessing product media and images.
+
+```javascript
+const media = await client.mediaContent.getMediaContent({
+  productId: 'ABC123'
+});
+```
+
+<ParamField path="getMediaContent" type="function">
+  Get media content for a product
+</ParamField>
+
+<ParamField path="getMediaDateModified" type="function">
+  Get media content modified after a specific date
+</ParamField>
+
+#### inventory
+
+Methods for checking product inventory and availability.
+
+```javascript
+const levels = await client.inventory.getInventoryLevels({
+  productId: 'ABC123'
+});
+```
+
+<ParamField path="getInventoryLevels" type="function">
+  Get current inventory levels for products
+</ParamField>
+
+<ParamField path="getFilterValues" type="function">
+  Get available filter values for inventory queries
+</ParamField>
+
+#### orderStatus
+
+Methods for retrieving order status information.
+
+```javascript
+const status = await client.orderStatus.getOrderStatusDetails({
+  purchaseOrderNumber: 'PO-12345'
+});
+```
+
+<ParamField path="getOrderStatusDetails" type="function">
+  Get detailed status information for an order
+</ParamField>
+
+<ParamField path="getOrderStatusTypes" type="function">
+  Get available order status types
+</ParamField>
+
+#### orderShipmentNotification
+
+Methods for retrieving shipment notifications.
+
+```javascript
+const notification = await client.orderShipmentNotification.getOrderShipmentNotification({
+  purchaseOrderNumber: 'PO-12345'
+});
+```
+
+<ParamField path="getOrderShipmentNotification" type="function">
+  Get shipment notification details for an order
+</ParamField>
+
+#### invoice
+
+Methods for retrieving invoice information.
+
+```javascript
+const invoices = await client.invoice.getInvoices({
+  purchaseOrderNumber: 'PO-12345'
+});
+```
+
+<ParamField path="getInvoices" type="function">
+  Get invoice information for orders
+</ParamField>
+
+#### productPricingAndConfiguration
+
+Methods for product pricing and configuration options.
+
+```javascript
+const locations = await client.productPricingAndConfiguration.getAvailableLocations({
+  productId: 'ABC123'
+});
+```
+
+<ParamField path="getAvailableLocations" type="function">
+  Get available decoration locations for a product
+</ParamField>
+
+<ParamField path="getDecorationColors" type="function">
+  Get available decoration colors
+</ParamField>
+
+<ParamField path="getFobPoints" type="function">
+  Get FOB (Freight on Board) points
+</ParamField>
+
+<ParamField path="getAvailableCharges" type="function">
+  Get available charges for product configuration
+</ParamField>
+
+<ParamField path="getConfigurationAndPricing" type="function">
+  Get complete configuration and pricing information
+</ParamField>
+
+#### purchaseOrder
+
+Methods for submitting purchase orders.
+
+```javascript
+const result = await client.purchaseOrder.sendPO({
+  purchaseOrderNumber: 'PO-12345',
+  // ... other order details
+});
+```
+
+<ParamField path="sendPO" type="function">
+  Submit a purchase order to the supplier
+</ParamField>
+
+## Example Usage
+
+Here's a complete example showing how to create a client and make requests:
+
+```javascript
+import { PromoStandards } from 'promostandards';
+
+// Initialize the client
+const client = new PromoStandards.Client({
+  id: 'supplier-username',
+  password: 'supplier-password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '1.0.0',
+      url: 'https://api.supplier.com/ProductData'
+    },
+    {
+      type: 'Inventory',
+      version: '1.2.1',
+      url: 'https://api.supplier.com/Inventory'
+    }
+  ],
+  format: 'json'
+});
+
+// Get product information
+const product = await client.productData.getProduct({
+  productId: 'ABC123',
+  localizationCountry: 'US',
+  localizationLanguage: 'en'
+});
+
+// Check inventory levels
+const inventory = await client.inventory.getInventoryLevels({
+  productId: 'ABC123'
+});
+
+console.log('Product:', product);
+console.log('Inventory:', inventory);
+```

@@ -1,0 +1,257 @@
+---
+title: Working with Products
+description: Learn how to retrieve and manage product data using the PromoStandards ProductData service
+---
+
+The ProductData service provides methods to retrieve detailed product information, track modifications, and manage product availability. This guide covers all ProductData methods with practical examples.
+
+## Overview
+
+The ProductData service offers four key methods:
+
+- `getProduct` - Retrieve complete product details
+- `getProductSellable` - Get sellable products list
+- `getProductDateModified` - Track product changes
+- `getProductCloseOut` - Find close-out products
+
+## Setup
+
+First, configure your client with the ProductData endpoint:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const supplier = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '2.0.0',
+      url: 'https://supplier.com/productData',
+    },
+  ],
+});
+```
+
+## Getting Product Details
+
+<Steps>
+  <Step title="Retrieve basic product information">
+    Use `getProduct` to fetch complete product details including descriptions, specifications, and pricing.
+
+    ```javascript
+    const productData = await supplier.productData.getProduct({
+      productId: 'SHIRT-001',
+      localizationCountry: 'US',
+      localizationLanguage: 'en',
+    });
+
+    console.log(productData);
+    ```
+
+    <Note>
+      The `localizationCountry` accepts `'US'` or `'CA'`, and `localizationLanguage` accepts `'en'` or `'fr'`.
+    </Note>
+  </Step>
+
+  <Step title="Filter by specific variant">
+    Narrow results to a specific part or color variant:
+
+    ```javascript
+    const blueShirt = await supplier.productData.getProduct({
+      productId: 'SHIRT-001',
+      localizationCountry: 'US',
+      localizationLanguage: 'en',
+      partId: 'SHIRT-001-L',
+      colorName: 'Royal Blue',
+    });
+    ```
+  </Step>
+</Steps>
+
+## Tracking Product Changes
+
+Monitor when products were last modified to keep your catalog synchronized:
+
+```javascript
+const modifiedProducts = await supplier.productData.getProductDateModified({
+  productId: 'SHIRT-001',
+  changeTimeStamp: '2024-01-01T00:00:00Z',
+});
+
+if (modifiedProducts) {
+  console.log('Product has been updated since the specified date');
+  // Fetch updated product data
+  const updatedProduct = await supplier.productData.getProduct({
+    productId: 'SHIRT-001',
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+  });
+}
+```
+
+<Tip>
+  Use this method in scheduled jobs to keep your product catalog in sync without fetching all products every time.
+</Tip>
+
+## Finding Sellable Products
+
+Retrieve all products that are currently sellable:
+
+```javascript
+// Get all sellable products
+const sellableProducts = await supplier.productData.getProductSellable({
+  isSellable: true,
+});
+
+// Check specific product sellability
+const specificProduct = await supplier.productData.getProductSellable({
+  productId: 'SHIRT-001',
+  isSellable: true,
+});
+
+// Check specific part sellability
+const specificPart = await supplier.productData.getProductSellable({
+  productId: 'SHIRT-001',
+  partId: 'SHIRT-001-XL',
+  isSellable: true,
+});
+```
+
+## Finding Close-Out Products
+
+Discover products on close-out for special pricing opportunities:
+
+```javascript
+const closeOutProducts = await supplier.productData.getProductCloseOut({});
+
+console.log('Close-out products:', closeOutProducts);
+
+// Process close-out items
+if (closeOutProducts?.ProductCloseOutArray) {
+  for (const product of closeOutProducts.ProductCloseOutArray) {
+    console.log(`${product.productId} - Limited stock available`);
+  }
+}
+```
+
+<Warning>
+  Close-out products may have limited availability. Always check inventory levels before placing orders.
+</Warning>
+
+## Complete Workflow Example
+
+Here's a complete example that retrieves product data and validates sellability:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+async function getProductCatalog() {
+  const supplier = new PromoStandards.Client({
+    id: 'account_id',
+    password: 'password',
+    endpoints: [
+      {
+        type: 'ProductData',
+        version: '2.0.0',
+        url: 'https://supplier.com/productData',
+      },
+    ],
+  });
+
+  try {
+    // Step 1: Get all sellable products
+    const sellableProducts = await supplier.productData.getProductSellable({
+      isSellable: true,
+    });
+
+    console.log('Found sellable products:', sellableProducts);
+
+    // Step 2: Get detailed info for first product
+    if (sellableProducts?.ProductSellableArray?.[0]) {
+      const productId = sellableProducts.ProductSellableArray[0].productId;
+      
+      const productDetails = await supplier.productData.getProduct({
+        productId: productId,
+        localizationCountry: 'US',
+        localizationLanguage: 'en',
+      });
+
+      console.log('Product details:', productDetails);
+    }
+
+    // Step 3: Check for close-out deals
+    const closeOuts = await supplier.productData.getProductCloseOut({});
+    console.log('Close-out opportunities:', closeOuts);
+
+  } catch (error) {
+    console.error('Error fetching product data:', error);
+  }
+}
+
+getProductCatalog();
+```
+
+## Method Reference
+
+### getProduct
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `productId` | string | Yes | Product identifier |
+| `localizationCountry` | string | Yes | Country code (US or CA) |
+| `localizationLanguage` | string | Yes | Language code (en or fr) |
+| `partId` | string | No | Specific part/variant ID |
+| `colorName` | string | No | Color name filter |
+
+### getProductSellable
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `isSellable` | boolean | Yes | Filter by sellable status |
+| `productId` | string | No | Specific product ID |
+| `partId` | string | No | Specific part ID |
+
+### getProductDateModified
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `productId` | string | Yes | Product identifier |
+| `changeTimeStamp` | string | Yes | ISO 8601 timestamp |
+| `partId` | string | No | Specific part ID |
+
+### getProductCloseOut
+
+No parameters required. Returns all products currently on close-out.
+
+## Best Practices
+
+<Steps>
+  <Step title="Cache product data">
+    Product details change infrequently. Cache results and use `getProductDateModified` to detect changes.
+  </Step>
+
+  <Step title="Handle localization">
+    Always specify both `localizationCountry` and `localizationLanguage` to ensure correct pricing and descriptions.
+  </Step>
+
+  <Step title="Error handling">
+    Wrap API calls in try-catch blocks and handle network errors gracefully.
+  </Step>
+
+  <Step title="Batch operations">
+    If checking multiple products, implement rate limiting to avoid overwhelming the supplier's API.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Managing Inventory" icon="box" href="/guides/managing-inventory">
+    Check stock levels and availability
+  </Card>
+  <Card title="Media and Assets" icon="image" href="/guides/media-and-assets">
+    Retrieve product images and media
+  </Card>
+</CardGroup>

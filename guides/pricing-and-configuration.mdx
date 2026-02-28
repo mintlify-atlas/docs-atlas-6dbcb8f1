@@ -1,0 +1,499 @@
+---
+title: Pricing and Configuration
+description: Get pricing, decoration options, and product configuration details using the PromoStandards ProductPricingAndConfiguration service
+---
+
+The ProductPricingAndConfiguration service provides comprehensive pricing information, decoration locations, available charges, and FOB points. This guide covers all methods for pricing and configuration data.
+
+## Overview
+
+The ProductPricingAndConfiguration service offers five methods:
+
+- `getConfigurationAndPricing` - Get complete pricing and configuration
+- `getAvailableLocations` - Find decoration locations
+- `getDecorationColors` - Get available decoration colors
+- `getFobPoints` - Get shipping origin points
+- `getAvailableCharges` - Get applicable fees and charges
+
+## Setup
+
+Configure your client with the ProductPricingAndConfiguration endpoint:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const supplier = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'ProductPricingAndConfiguration',
+      version: '1.0.0',
+      url: 'https://supplier.com/pricingAndConfiguration',
+    },
+  ],
+});
+```
+
+## Getting Complete Pricing
+
+<Steps>
+  <Step title="Request pricing and configuration">
+    Get comprehensive pricing including quantity breaks and decoration costs:
+
+    ```javascript
+    const pricingData = await supplier.productPricingAndConfiguration
+      .getConfigurationAndPricing({
+        productId: 'SHIRT-001',
+        currency: 'USD',
+        priceType: 'Customer',
+        fobId: 1,
+        localizationCountry: 'US',
+        localizationLanguage: 'en',
+        configurationType: 'Blank',
+      });
+
+    console.log(pricingData);
+    ```
+  </Step>
+
+  <Step title="Process pricing tiers">
+    The response includes quantity-based pricing:
+
+    ```javascript
+    if (pricingData?.Configuration?.PartArray) {
+      for (const part of pricingData.Configuration.PartArray) {
+        console.log(`Part: ${part.partId}`);
+        
+        if (part.PriceArray) {
+          for (const price of part.PriceArray) {
+            console.log(`  ${price.minQuantity}-${price.maxQuantity}: $${price.price}`);
+          }
+        }
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Understanding Price Types
+
+The `priceType` parameter determines which pricing tier to return:
+
+### Customer Pricing
+
+```javascript
+const customerPricing = await supplier.productPricingAndConfiguration
+  .getConfigurationAndPricing({
+    productId: 'SHIRT-001',
+    currency: 'USD',
+    priceType: 'Customer', // End customer pricing
+    fobId: 1,
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+    configurationType: 'Blank',
+  });
+```
+
+### List Pricing
+
+```javascript
+const listPricing = await supplier.productPricingAndConfiguration
+  .getConfigurationAndPricing({
+    productId: 'SHIRT-001',
+    currency: 'USD',
+    priceType: 'List', // Suggested retail pricing
+    fobId: 1,
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+    configurationType: 'Blank',
+  });
+```
+
+<Note>
+  Available price types depend on your account permissions with the supplier.
+</Note>
+
+## Configuration Types
+
+Specify whether you want blank product pricing or decorated pricing:
+
+### Blank Configuration
+
+```javascript
+const blankPricing = await supplier.productPricingAndConfiguration
+  .getConfigurationAndPricing({
+    productId: 'SHIRT-001',
+    currency: 'USD',
+    priceType: 'Customer',
+    fobId: 1,
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+    configurationType: 'Blank', // Product without decoration
+  });
+```
+
+### Decorated Configuration
+
+```javascript
+const decoratedPricing = await supplier.productPricingAndConfiguration
+  .getConfigurationAndPricing({
+    productId: 'SHIRT-001',
+    currency: 'USD',
+    priceType: 'Customer',
+    fobId: 1,
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+    configurationType: 'Decorated', // Includes decoration pricing
+  });
+```
+
+## Finding Decoration Locations
+
+Discover where a product can be decorated:
+
+```javascript
+const locations = await supplier.productPricingAndConfiguration
+  .getAvailableLocations({
+    productId: 'SHIRT-001',
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+  });
+
+if (locations?.LocationArray) {
+  for (const location of locations.LocationArray) {
+    console.log(`Location: ${location.locationName}`);
+    console.log(`  ID: ${location.locationId}`);
+    console.log(`  Decoration methods: ${location.DecorationMethodArray?.join(', ')}`);
+  }
+}
+```
+
+### Common Decoration Locations
+
+- Left Chest
+- Full Front
+- Full Back
+- Right Sleeve
+- Left Sleeve
+
+## Getting Decoration Colors
+
+Retrieve available decoration colors for a location:
+
+```javascript
+const colors = await supplier.productPricingAndConfiguration
+  .getDecorationColors({
+    locationId: 'LEFT_CHEST',
+    productId: 'SHIRT-001',
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+  });
+
+if (colors?.ColorArray) {
+  for (const color of colors.ColorArray) {
+    console.log(`${color.colorName} (${color.colorCode})`);
+  }
+}
+```
+
+### Filtering by Decoration Method
+
+```javascript
+const embroideryColors = await supplier.productPricingAndConfiguration
+  .getDecorationColors({
+    locationId: 'LEFT_CHEST',
+    productId: 'SHIRT-001',
+    decorationId: 'EMBROIDERY',
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+  });
+```
+
+## Finding FOB Points
+
+Get available shipping origin points:
+
+```javascript
+const fobPoints = await supplier.productPricingAndConfiguration.getFobPoints({
+  productId: 'SHIRT-001',
+  localizationCountry: 'US',
+  localizationLanguage: 'en',
+});
+
+if (fobPoints?.FobPointArray) {
+  for (const fob of fobPoints.FobPointArray) {
+    console.log(`FOB ID: ${fob.fobId}`);
+    console.log(`  Location: ${fob.fobCity}, ${fob.fobState} ${fob.fobPostalCode}`);
+  }
+}
+```
+
+<Tip>
+  FOB points affect shipping costs. Choose the closest point to minimize freight charges.
+</Tip>
+
+## Getting Available Charges
+
+Retrieve applicable fees and charges:
+
+```javascript
+const charges = await supplier.productPricingAndConfiguration
+  .getAvailableCharges({
+    productId: 'SHIRT-001',
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+  });
+
+if (charges?.ChargeArray) {
+  for (const charge of charges.ChargeArray) {
+    console.log(`${charge.chargeName}: $${charge.chargePrice}`);
+    console.log(`  Type: ${charge.chargeType}`);
+    console.log(`  Description: ${charge.chargeDescription}`);
+  }
+}
+```
+
+### Common Charge Types
+
+- Setup fees
+- Running charges
+- Less-than-minimum charges
+- Rush fees
+- Shipping charges
+
+## Complete Pricing Workflow
+
+Here's a complete example that builds a price quote:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+async function buildPriceQuote(productId, quantity, decorationRequired) {
+  const supplier = new PromoStandards.Client({
+    id: 'account_id',
+    password: 'password',
+    endpoints: [
+      {
+        type: 'ProductPricingAndConfiguration',
+        version: '1.0.0',
+        url: 'https://supplier.com/pricingAndConfiguration',
+      },
+    ],
+  });
+
+  const quote = {
+    productId: productId,
+    quantity: quantity,
+    unitPrice: 0,
+    decorationCost: 0,
+    charges: [],
+    totalCost: 0,
+  };
+
+  try {
+    // Step 1: Get FOB points
+    const fobPoints = await supplier.productPricingAndConfiguration.getFobPoints({
+      productId: productId,
+      localizationCountry: 'US',
+      localizationLanguage: 'en',
+    });
+
+    const fobId = fobPoints?.FobPointArray?.[0]?.fobId || 1;
+
+    // Step 2: Get base pricing
+    const pricing = await supplier.productPricingAndConfiguration
+      .getConfigurationAndPricing({
+        productId: productId,
+        currency: 'USD',
+        priceType: 'Customer',
+        fobId: fobId,
+        localizationCountry: 'US',
+        localizationLanguage: 'en',
+        configurationType: decorationRequired ? 'Decorated' : 'Blank',
+      });
+
+    // Find unit price for requested quantity
+    if (pricing?.Configuration?.PartArray?.[0]?.PriceArray) {
+      const priceBreak = pricing.Configuration.PartArray[0].PriceArray.find(
+        (p) => quantity >= p.minQuantity && quantity <= p.maxQuantity
+      );
+      
+      if (priceBreak) {
+        quote.unitPrice = priceBreak.price;
+      }
+    }
+
+    // Step 3: Get decoration costs if needed
+    if (decorationRequired) {
+      const locations = await supplier.productPricingAndConfiguration
+        .getAvailableLocations({
+          productId: productId,
+          localizationCountry: 'US',
+          localizationLanguage: 'en',
+        });
+
+      // Calculate decoration cost (simplified)
+      if (locations?.LocationArray?.[0]) {
+        quote.decorationCost = 2.50; // Example decoration cost per unit
+      }
+    }
+
+    // Step 4: Get applicable charges
+    const charges = await supplier.productPricingAndConfiguration
+      .getAvailableCharges({
+        productId: productId,
+        localizationCountry: 'US',
+        localizationLanguage: 'en',
+      });
+
+    if (charges?.ChargeArray) {
+      quote.charges = charges.ChargeArray.map((c) => ({
+        name: c.chargeName,
+        amount: c.chargePrice,
+        type: c.chargeType,
+      }));
+    }
+
+    // Calculate total
+    const productTotal = (quote.unitPrice + quote.decorationCost) * quantity;
+    const chargesTotal = quote.charges.reduce((sum, c) => sum + c.amount, 0);
+    quote.totalCost = productTotal + chargesTotal;
+
+    return quote;
+  } catch (error) {
+    console.error('Error building quote:', error);
+    throw error;
+  }
+}
+
+// Usage
+const quote = await buildPriceQuote('SHIRT-001', 100, true);
+
+console.log('Price Quote:');
+console.log(`  Unit Price: $${quote.unitPrice}`);
+console.log(`  Decoration: $${quote.decorationCost}`);
+console.log(`  Quantity: ${quote.quantity}`);
+console.log(`  Subtotal: $${(quote.unitPrice + quote.decorationCost) * quote.quantity}`);
+
+if (quote.charges.length > 0) {
+  console.log('  Additional Charges:');
+  for (const charge of quote.charges) {
+    console.log(`    ${charge.name}: $${charge.amount}`);
+  }
+}
+
+console.log(`  TOTAL: $${quote.totalCost}`);
+```
+
+## Method Reference
+
+### getConfigurationAndPricing
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `productId` | string | Yes | Product identifier |
+| `currency` | string | Yes | Currency code (USD, CAD, etc.) |
+| `priceType` | string | Yes | Price tier (Customer, List, etc.) |
+| `fobId` | number | Yes | FOB point identifier |
+| `localizationCountry` | string | Yes | Country code (US, CA) |
+| `localizationLanguage` | string | Yes | Language code (en, fr) |
+| `configurationType` | string | Yes | Blank or Decorated |
+| `partId` | string | No | Specific variant ID |
+
+### getAvailableLocations
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `productId` | string | Yes | Product identifier |
+| `localizationCountry` | string | Yes | Country code |
+| `localizationLanguage` | string | Yes | Language code |
+
+### getDecorationColors
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `locationId` | string | Yes | Decoration location ID |
+| `productId` | string | Yes | Product identifier |
+| `localizationCountry` | string | Yes | Country code |
+| `localizationLanguage` | string | Yes | Language code |
+| `decorationId` | string | No | Decoration method filter |
+
+### getFobPoints
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `productId` | string | Yes | Product identifier |
+| `localizationCountry` | string | Yes | Country code |
+| `localizationLanguage` | string | Yes | Language code |
+
+### getAvailableCharges
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `localizationCountry` | string | Yes | Country code |
+| `localizationLanguage` | string | Yes | Language code |
+| `productId` | string | No | Product identifier |
+
+## Multi-Currency Support
+
+```javascript
+// USD pricing
+const usdPricing = await supplier.productPricingAndConfiguration
+  .getConfigurationAndPricing({
+    productId: 'SHIRT-001',
+    currency: 'USD',
+    priceType: 'Customer',
+    fobId: 1,
+    localizationCountry: 'US',
+    localizationLanguage: 'en',
+    configurationType: 'Blank',
+  });
+
+// CAD pricing
+const cadPricing = await supplier.productPricingAndConfiguration
+  .getConfigurationAndPricing({
+    productId: 'SHIRT-001',
+    currency: 'CAD',
+    priceType: 'Customer',
+    fobId: 2,
+    localizationCountry: 'CA',
+    localizationLanguage: 'en',
+    configurationType: 'Blank',
+  });
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Cache FOB points">
+    FOB points rarely change. Cache them to reduce API calls.
+  </Step>
+
+  <Step title="Get pricing just-in-time">
+    Pricing can change. Fetch current pricing before finalizing orders.
+  </Step>
+
+  <Step title="Show quantity breaks">
+    Display all pricing tiers to encourage larger orders.
+  </Step>
+
+  <Step title="Include all charges">
+    Always fetch and display applicable charges for transparent pricing.
+  </Step>
+
+  <Step title="Validate decoration options">
+    Use `getAvailableLocations` and `getDecorationColors` to validate decoration choices.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Orders and Status" icon="shopping-cart" href="/guides/orders-and-status">
+    Submit orders with pricing data
+  </Card>
+  <Card title="Managing Inventory" icon="warehouse" href="/guides/managing-inventory">
+    Check stock before pricing quotes
+  </Card>
+</CardGroup>

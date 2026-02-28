@@ -1,0 +1,115 @@
+---
+title: getProductDateModified
+description: Retrieve products that have been modified since a specific timestamp for efficient catalog updates
+---
+
+## Method Signature
+
+```typescript
+client.productData.getProductDateModified(params: GetProductDateModifiedParams): Promise<any>
+```
+
+Retrieves a list of products that have been modified after a specified timestamp. This method is essential for incremental catalog updates and synchronization.
+
+## Parameters
+
+<ParamField path="productId" type="string" required>
+  The product identifier to check for modifications
+</ParamField>
+
+<ParamField path="changeTimeStamp" type="string" required>
+  ISO 8601 formatted timestamp to retrieve products modified after this date/time (e.g., `2024-01-01T00:00:00Z`)
+</ParamField>
+
+<ParamField path="partId" type="string">
+  Optional part identifier to check modifications for a specific part/variant
+</ParamField>
+
+## Returns
+
+<ResponseField name="ProductDateModifiedArray" type="array">
+  Array of products with modification information
+  
+  <Expandable title="Product modification details">
+    <ResponseField name="productId" type="string">
+      The product identifier
+    </ResponseField>
+    
+    <ResponseField name="partId" type="string">
+      The part/variant identifier (if applicable)
+    </ResponseField>
+    
+    <ResponseField name="lastModified" type="string">
+      ISO 8601 timestamp of when the product was last modified
+    </ResponseField>
+    
+    <ResponseField name="changeType" type="string">
+      Type of change that occurred (e.g., "Updated", "Added", "Deleted")
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const client = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '2.0.0',
+      url: 'https://supplier.com/productData'
+    }
+  ]
+});
+
+// Get products modified since a specific date
+const modifiedProducts = await client.productData.getProductDateModified({
+  productId: 'ITEM-12345',
+  changeTimeStamp: '2024-01-01T00:00:00Z'
+});
+
+console.log(modifiedProducts);
+
+// Check modifications for a specific part
+const modifiedPart = await client.productData.getProductDateModified({
+  productId: 'ITEM-12345',
+  partId: 'ITEM-12345-BLK-L',
+  changeTimeStamp: '2024-02-01T12:00:00Z'
+});
+
+// Incremental sync example
+const lastSyncTime = '2024-02-15T08:30:00Z';
+const recentChanges = await client.productData.getProductDateModified({
+  productId: 'ITEM-12345',
+  changeTimeStamp: lastSyncTime
+});
+
+// Process only the products that changed
+if (recentChanges.length > 0) {
+  console.log(`Found ${recentChanges.length} modified products`);
+  // Update your local catalog with the changes
+}
+```
+
+## Use Cases
+
+- **Incremental Sync**: Update only products that have changed since your last synchronization
+- **Change Tracking**: Monitor when specific products are updated by suppliers
+- **Efficient Updates**: Reduce API calls and bandwidth by fetching only modified products
+- **Audit Trail**: Track the history of product changes over time
+
+## Best Practices
+
+- Store the last successful sync timestamp to use for subsequent calls
+- Use ISO 8601 format for timestamps to ensure compatibility
+- Consider time zones when working with timestamps
+- Poll this endpoint periodically (e.g., hourly or daily) to keep your catalog up to date
+
+## PromoStandards Documentation
+
+For more details on the Product Data service, refer to the official PromoStandards documentation:
+[Product Data Service 2.0.0](https://tools.promostandards.org/product-data-2-0-0)

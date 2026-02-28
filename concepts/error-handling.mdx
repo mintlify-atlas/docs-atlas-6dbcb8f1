@@ -1,0 +1,613 @@
+---
+title: Error Handling
+description: Learn how to handle errors effectively when using the PromoStandards SDK
+---
+
+## Overview
+
+The PromoStandards SDK uses Promise-based error handling for all API requests. Understanding how to properly catch and handle errors ensures your application can gracefully handle failures and provide meaningful feedback.
+
+## Promise-Based Error Handling
+
+All SDK methods return Promises, which means errors can be handled using standard JavaScript Promise patterns:
+
+```javascript
+import { PromoStandards } from 'promostandards';
+
+const client = new PromoStandards.Client({
+  id: 'username',
+  password: 'password',
+  endpoints: [{
+    type: 'ProductData',
+    version: '2.0.0',
+    url: 'https://api.supplier.com/ProductData'
+  }]
+});
+
+// Using async/await (recommended)
+try {
+  const result = await client.productData.getProduct({
+    productId: 'ABC123',
+    localizationCountry: 'US',
+    localizationLanguage: 'en'
+  });
+  console.log('Success:', result);
+} catch (error) {
+  console.error('Error:', error.message);
+}
+
+// Using .then().catch()
+client.productData.getProduct({
+  productId: 'ABC123',
+  localizationCountry: 'US',
+  localizationLanguage: 'en'
+})
+  .then(result => {
+    console.log('Success:', result);
+  })
+  .catch(error => {
+    console.error('Error:', error.message);
+  });
+```
+
+## How the SDK Handles Errors
+
+From PromoStandards.ts:115-154, the SDK's request implementation shows how errors are caught:
+
+```typescript
+public promoStandardsAPIRequest(
+  serviceAndMethodName: string,
+  params: any
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const [service, method] = serviceAndMethodName.split('.');
+    const endpoint = this.getEndpoint(service as ServiceType);
+
+    // Build SOAP request XML...
+    const requestXML: string = soapTemplateIndex[method](
+      Object.assign(
+        {
+          id: this.id,
+          password: this.password,
+          wsVersion: endpoint.version,
+          majorVersion: Utils.majorVersion(endpoint.version),
+        },
+        params
+      )
+    );
+
+    // Make HTTP request
+    axios
+      .post(endpoint.url, requestXML, {
+        headers: {
+          'Content-Type': 'text/xml',
+          SOAPAction: method,
+        },
+      })
+      .then((result: any) => {
+        this.format === 'json'
+          ? resolve(Utils.convertXMLtoJSON(result.data))
+          : resolve(result.data);
+      })
+      .catch((error: Error) => reject(error));  // Errors are rejected here
+  });
+}
+```
+
+<Steps>
+  <Step title="Request Initiated">
+    SDK creates SOAP XML and sends HTTP POST request
+  </Step>
+  <Step title="Error Occurs">
+    Network failure, authentication error, or SOAP fault
+  </Step>
+  <Step title="Promise Rejected">
+    Axios catches the error and the Promise is rejected
+  </Step>
+  <Step title="Your Catch Block">
+    Error propagates to your `catch` block for handling
+  </Step>
+</Steps>
+
+## Common Error Scenarios
+
+### Configuration Errors
+
+#### Missing Endpoint
+
+When a service endpoint is not configured, `getEndpoint()` throws a `ReferenceError`:
+
+```javascript
+try {
+  const client = new PromoStandards.Client({
+    id: 'username',
+    password: 'password',
+    endpoints: [
+      // ProductData endpoint not configured
+    ]
+  });
+
+  await client.productData.getProduct(params);
+} catch (error) {
+  if (error instanceof ReferenceError) {
+    console.error('Endpoint not configured:', error.message);
+    // Error: 'ProductData' endpoint is undefined
+  }
+}
+```
+
+From PromoStandards.ts:98-107:
+
+```typescript
+public getEndpoint(serviceName: ServiceType): ServiceEndpointType {
+  let endpoint;
+  if (this.endpoints && this.endpoints.length > 0) {
+    endpoint = this.endpoints.find(
+      (x) => x.type === serviceName
+    ) as ServiceEndpointType;
+    if (endpoint) return endpoint;
+  }
+  throw new ReferenceError(`'${serviceName}' endpoint is undefined`);
+}
+```
+
+<Warning>
+Always ensure required service endpoints are configured before making API calls.
+</Warning>
+
+### Authentication Errors
+
+Invalid credentials typically result in HTTP 401 or 403 errors:
+
+```javascript
+try {
+  const result = await client.productData.getProduct(params);
+} catch (error) {
+  if (error.response) {
+    switch (error.response.status) {
+      case 401:
+        console.error('Unauthorized: Invalid credentials');
+        // Update credentials or notify user
+        break;
+      case 403:
+        console.error('Forbidden: Access denied');
+        // Check account permissions
+        break;
+      default:
+        console.error('HTTP Error:', error.response.status);
+    }
+  }
+}
+```
+
+### Network Errors
+
+Network failures occur when the supplier's endpoint is unreachable:
+
+```javascript
+try {
+  const result = await client.productData.getProduct(params);
+} catch (error) {
+  if (error.code === 'ECONNREFUSED') {
+    console.error('Connection refused: Endpoint may be down');
+  } else if (error.code === 'ENOTFOUND') {
+    console.error('DNS resolution failed: Check endpoint URL');
+  } else if (error.code === 'ETIMEDOUT') {
+    console.error('Request timeout: Endpoint not responding');
+  } else {
+    console.error('Network error:', error.message);
+  }
+}
+```
+
+### SOAP Faults
+
+SOAP services may return faults for business logic errors. These typically come as 200 OK responses with fault information in the XML:
+
+```javascript
+try {
+  const result = await client.productData.getProduct({
+    productId: 'INVALID-ID',
+    localizationCountry: 'US',
+    localizationLanguage: 'en'
+  });
+
+  // Check for SOAP fault in JSON response
+  if (result?.Envelope?.Body?.Fault) {
+    const fault = result.Envelope.Body.Fault;
+    console.error('SOAP Fault:', fault.faultstring || fault.faultcode);
+    // Handle business logic error
+  } else {
+    // Process successful response
+    console.log('Product data:', result);
+  }
+} catch (error) {
+  // Network or other errors
+  console.error('Request failed:', error.message);
+}
+```
+
+<Note>
+SOAP faults don't always throw JavaScript errors. Always check the response structure for fault indicators.
+</Note>
+
+### XML Parsing Errors
+
+When using `format: 'json'`, XML parsing can fail if the response is malformed:
+
+```javascript
+try {
+  const result = await client.productData.getProduct(params);
+} catch (error) {
+  if (error.message.includes('Non-whitespace before first tag')) {
+    console.error('Invalid XML response received');
+    // Log raw response for debugging
+  } else {
+    console.error('Parsing error:', error.message);
+  }
+}
+```
+
+From Utils.ts:29-50, XML conversion errors are rejected:
+
+```typescript
+export const convertXMLtoJSON = (xml: string): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    xml2js.parseString(
+      xml,
+      { /* options */ },
+      (err: any, data: any) => {
+        if (err) {
+          reject(err);  // XML parsing errors rejected here
+        }
+        resolve(replaceArrayTagsWithArrays(data));
+      }
+    );
+  });
+};
+```
+
+## Error Handling Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always Use Try-Catch with Async/Await">
+    Never call async SDK methods without error handling:
+    
+    ```javascript
+    // ❌ BAD - Unhandled promise rejection
+    const result = await client.productData.getProduct(params);
+    
+    // ✅ GOOD - Proper error handling
+    try {
+      const result = await client.productData.getProduct(params);
+      // Process result
+    } catch (error) {
+      // Handle error
+      console.error('Failed to fetch product:', error.message);
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Check Response Structure">
+    Validate response data before accessing nested properties:
+    
+    ```javascript
+    try {
+      const result = await client.productData.getProduct(params);
+      
+      // Check for SOAP fault
+      if (result?.Envelope?.Body?.Fault) {
+        throw new Error(result.Envelope.Body.Fault.faultstring);
+      }
+      
+      // Safe property access with optional chaining
+      const product = result?.Envelope?.Body?.getProductResponse?.Product;
+      
+      if (!product) {
+        throw new Error('Product data not found in response');
+      }
+      
+      console.log('Product:', product.productName);
+    } catch (error) {
+      console.error('Error:', error.message);
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Implement Retry Logic">
+    Network errors may be transient. Implement exponential backoff:
+    
+    ```javascript
+    async function fetchProductWithRetry(client, params, maxRetries = 3) {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          return await client.productData.getProduct(params);
+        } catch (error) {
+          if (attempt === maxRetries) {
+            throw error; // Final attempt failed
+          }
+          
+          // Only retry on network errors
+          if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+            const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+            console.log(`Retry attempt ${attempt} after ${delay}ms`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          } else {
+            throw error; // Don't retry non-network errors
+          }
+        }
+      }
+    }
+    
+    // Usage
+    try {
+      const result = await fetchProductWithRetry(client, params);
+      console.log('Success:', result);
+    } catch (error) {
+      console.error('Failed after retries:', error.message);
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Log Errors Appropriately">
+    Include context and structured logging:
+    
+    ```javascript
+    try {
+      const result = await client.productData.getProduct(params);
+    } catch (error) {
+      // Structured error logging
+      console.error({
+        timestamp: new Date().toISOString(),
+        service: 'ProductData',
+        method: 'getProduct',
+        params: params,
+        error: {
+          message: error.message,
+          code: error.code,
+          status: error.response?.status,
+          data: error.response?.data
+        }
+      });
+      
+      // Re-throw or handle
+      throw error;
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Create Custom Error Classes">
+    Differentiate between error types:
+    
+    ```javascript
+    class PromoStandardsError extends Error {
+      constructor(message, code, service, method) {
+        super(message);
+        this.name = 'PromoStandardsError';
+        this.code = code;
+        this.service = service;
+        this.method = method;
+      }
+    }
+    
+    class AuthenticationError extends PromoStandardsError {
+      constructor(service, method) {
+        super('Authentication failed', 'AUTH_ERROR', service, method);
+        this.name = 'AuthenticationError';
+      }
+    }
+    
+    class ConfigurationError extends PromoStandardsError {
+      constructor(message) {
+        super(message, 'CONFIG_ERROR', null, null);
+        this.name = 'ConfigurationError';
+      }
+    }
+    
+    // Usage
+    try {
+      const result = await client.productData.getProduct(params);
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new AuthenticationError('ProductData', 'getProduct');
+      } else if (error instanceof ReferenceError) {
+        throw new ConfigurationError(error.message);
+      } else {
+        throw new PromoStandardsError(
+          error.message,
+          'UNKNOWN_ERROR',
+          'ProductData',
+          'getProduct'
+        );
+      }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Validate Before Calling">
+    Check configuration before making requests:
+    
+    ```javascript
+    function validateClient(client, serviceName) {
+      if (!client.id || !client.password) {
+        throw new Error('Client credentials not configured');
+      }
+      
+      try {
+        client.getEndpoint(serviceName);
+      } catch (error) {
+        throw new Error(`${serviceName} endpoint not configured`);
+      }
+    }
+    
+    // Usage
+    try {
+      validateClient(client, 'ProductData');
+      const result = await client.productData.getProduct(params);
+    } catch (error) {
+      console.error('Validation or request failed:', error.message);
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Comprehensive Error Handling Example
+
+```javascript
+import { PromoStandards } from 'promostandards';
+
+class PromoStandardsService {
+  constructor(config) {
+    this.client = new PromoStandards.Client(config);
+  }
+
+  async getProduct(productId, country = 'US', language = 'en') {
+    try {
+      // Validate endpoint configuration
+      this.client.getEndpoint('ProductData');
+
+      // Make API request
+      const result = await this.client.productData.getProduct({
+        productId,
+        localizationCountry: country,
+        localizationLanguage: language
+      });
+
+      // Check for SOAP fault
+      if (result?.Envelope?.Body?.Fault) {
+        const fault = result.Envelope.Body.Fault;
+        throw new Error(`SOAP Fault: ${fault.faultstring || fault.faultcode}`);
+      }
+
+      // Extract product data
+      const product = result?.Envelope?.Body?.getProductResponse?.Product;
+      
+      if (!product) {
+        throw new Error('Product data not found in response');
+      }
+
+      return product;
+
+    } catch (error) {
+      // Log error with context
+      console.error({
+        timestamp: new Date().toISOString(),
+        method: 'getProduct',
+        productId,
+        error: {
+          message: error.message,
+          type: error.constructor.name,
+          code: error.code,
+          status: error.response?.status
+        }
+      });
+
+      // Handle specific error types
+      if (error instanceof ReferenceError) {
+        throw new Error('ProductData service not configured. Check endpoints.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Authentication failed. Check credentials.');
+      } else if (error.code === 'ETIMEDOUT') {
+        throw new Error('Request timeout. Supplier endpoint may be slow.');
+      } else if (error.code === 'ECONNREFUSED') {
+        throw new Error('Connection refused. Supplier endpoint may be down.');
+      } else {
+        // Re-throw unexpected errors
+        throw error;
+      }
+    }
+  }
+}
+
+// Usage
+const service = new PromoStandardsService({
+  id: process.env.SUPPLIER_USERNAME,
+  password: process.env.SUPPLIER_PASSWORD,
+  endpoints: [{
+    type: 'ProductData',
+    version: '2.0.0',
+    url: process.env.PRODUCT_DATA_ENDPOINT
+  }]
+});
+
+try {
+  const product = await service.getProduct('ABC123');
+  console.log('Product:', product.productName);
+} catch (error) {
+  console.error('Failed to fetch product:', error.message);
+  // Show user-friendly error message
+  // Log to error tracking service
+  // etc.
+}
+```
+
+## Debugging Errors
+
+<CardGroup cols={2}>
+  <Card title="Use XML Format" icon="code">
+    Switch to `format: 'xml'` to see raw SOAP responses and identify issues
+  </Card>
+  <Card title="Check Network Tab" icon="network-wired">
+    Use browser DevTools or tools like Wireshark to inspect HTTP traffic
+  </Card>
+  <Card title="Enable Axios Logging" icon="terminal">
+    Add Axios interceptors to log all requests and responses
+  </Card>
+  <Card title="Test Credentials" icon="key">
+    Create a simple test script to verify authentication works
+  </Card>
+</CardGroup>
+
+### Axios Request/Response Logging
+
+```javascript
+const axios = require('axios');
+
+// Add request interceptor
+axios.interceptors.request.use(
+  config => {
+    console.log('Request:', {
+      method: config.method,
+      url: config.url,
+      headers: config.headers,
+      data: config.data?.substring(0, 500) // Log first 500 chars of XML
+    });
+    return config;
+  },
+  error => {
+    console.error('Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor
+axios.interceptors.response.use(
+  response => {
+    console.log('Response:', {
+      status: response.status,
+      headers: response.headers,
+      data: response.data?.substring(0, 500)
+    });
+    return response;
+  },
+  error => {
+    console.error('Response Error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    return Promise.reject(error);
+  }
+);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Client Configuration" icon="gear" href="/concepts/client-configuration">
+    Ensure proper client configuration to avoid errors
+  </Card>
+  <Card title="Authentication" icon="lock" href="/concepts/authentication">
+    Learn about authentication best practices
+  </Card>
+</CardGroup>

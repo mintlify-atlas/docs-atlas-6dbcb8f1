@@ -1,0 +1,208 @@
+---
+title: Client Configuration
+description: Learn how to configure the PromoStandards Client with service endpoints and options
+---
+
+## Overview
+
+The PromoStandards Client is the main entry point for interacting with PromoStandards SOAP APIs. Proper configuration ensures your application can communicate with the correct service endpoints and handle responses appropriately.
+
+## Creating a Client
+
+The Client is initialized with a configuration object containing credentials, endpoints, and optional response format preferences:
+
+```javascript
+import { PromoStandards } from 'promostandards';
+
+const client = new PromoStandards.Client({
+  id: 'your-username',
+  password: 'your-password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '2.0.0',
+      url: 'https://supplier.example.com/ProductData'
+    },
+    {
+      type: 'Inventory',
+      version: '2.0.0',
+      url: 'https://supplier.example.com/Inventory'
+    }
+  ],
+  format: 'json' // Optional: 'json' or 'xml'
+});
+```
+
+## Configuration Options
+
+### Authentication Credentials
+
+<ParamField path="id" type="string" optional>
+  Username provided by the supplier for API access
+</ParamField>
+
+<ParamField path="password" type="string" optional>
+  Password provided by the supplier for API access
+</ParamField>
+
+<Info>
+Credentials are optional at initialization but required for API calls. See [Authentication](/concepts/authentication) for details.
+</Info>
+
+### Service Endpoints
+
+<ParamField path="endpoints" type="ServiceEndpointType[]" optional>
+  Array of service endpoint configurations
+</ParamField>
+
+Each endpoint object must follow the `ServiceEndpointType` structure:
+
+```typescript
+type ServiceEndpointType = {
+  type: ServiceType;
+  version: string;
+  url: string;
+};
+```
+
+#### Endpoint Properties
+
+**type** (ServiceType)
+
+The PromoStandards service type. Supported values:
+- `Inventory`
+- `Invoice`
+- `MediaContent`
+- `OrderShipmentNotification`
+- `OrderStatus`
+- `ProductData`
+- `ProductPricingAndConfiguration`
+- `PurchaseOrder`
+
+**version** (string)
+
+Semantic version of the service endpoint (e.g., `"2.0.0"`, `"1.0.0"`). The SDK extracts the major version for SOAP requests.
+
+**url** (string)
+
+Full URL to the SOAP service endpoint provided by your supplier.
+
+### Response Format
+
+<ParamField path="format" type="'json' | 'xml'" default="json">
+  Determines the format of API responses
+</ParamField>
+
+- `json` - Responses are automatically converted from XML to JSON (default)
+- `xml` - Raw XML responses from the SOAP service
+
+See [Response Formats](/concepts/response-formats) for details on the conversion process.
+
+## Multiple Service Configuration
+
+Most PromoStandards integrations require multiple services. Configure all needed endpoints during initialization:
+
+```javascript
+const client = new PromoStandards.Client({
+  id: 'your-username',
+  password: 'your-password',
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: '2.0.0',
+      url: 'https://api.supplier.com/services/ProductData'
+    },
+    {
+      type: 'MediaContent',
+      version: '1.0.0',
+      url: 'https://api.supplier.com/services/MediaContent'
+    },
+    {
+      type: 'Inventory',
+      version: '2.0.0',
+      url: 'https://api.supplier.com/services/Inventory'
+    },
+    {
+      type: 'ProductPricingAndConfiguration',
+      version: '1.0.0',
+      url: 'https://api.supplier.com/services/PPC'
+    },
+    {
+      type: 'PurchaseOrder',
+      version: '1.0.0',
+      url: 'https://api.supplier.com/services/PO'
+    }
+  ],
+  format: 'json'
+});
+```
+
+## Retrieving Endpoints
+
+The SDK automatically retrieves the correct endpoint when you call a service method. You can also manually access an endpoint:
+
+```javascript
+try {
+  const productDataEndpoint = client.getEndpoint('ProductData');
+  console.log(productDataEndpoint);
+  // { type: 'ProductData', version: '2.0.0', url: 'https://...' }
+} catch (error) {
+  console.error('ProductData endpoint not configured');
+}
+```
+
+<Warning>
+The `getEndpoint()` method throws a `ReferenceError` if the requested service is not configured in the endpoints array.
+</Warning>
+
+## Configuration Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="key">
+    Store credentials and URLs in environment variables, never in source code
+  </Card>
+  <Card title="Centralized Config" icon="gears">
+    Create a single configuration module to manage all supplier endpoints
+  </Card>
+  <Card title="Version Management" icon="code-branch">
+    Document which API versions each supplier supports
+  </Card>
+  <Card title="Error Handling" icon="shield-check">
+    Always wrap endpoint access in try-catch blocks
+  </Card>
+</CardGroup>
+
+## Example: Environment-Based Configuration
+
+```javascript
+require('dotenv').config();
+
+const client = new PromoStandards.Client({
+  id: process.env.SUPPLIER_USERNAME,
+  password: process.env.SUPPLIER_PASSWORD,
+  endpoints: [
+    {
+      type: 'ProductData',
+      version: process.env.PRODUCT_DATA_VERSION || '2.0.0',
+      url: process.env.PRODUCT_DATA_ENDPOINT
+    },
+    {
+      type: 'Inventory',
+      version: process.env.INVENTORY_VERSION || '2.0.0',
+      url: process.env.INVENTORY_ENDPOINT
+    }
+  ],
+  format: 'json'
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/concepts/authentication">
+    Learn how credentials are used in API requests
+  </Card>
+  <Card title="Response Formats" icon="brackets-curly" href="/concepts/response-formats">
+    Understand XML to JSON conversion
+  </Card>
+</CardGroup>

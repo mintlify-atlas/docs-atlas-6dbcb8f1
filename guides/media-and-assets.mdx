@@ -1,0 +1,413 @@
+---
+title: Media and Assets
+description: Retrieve product images, videos, and digital assets using the PromoStandards MediaContent service
+---
+
+The MediaContent service provides access to product images, videos, PDFs, and other digital assets. This guide shows you how to retrieve media files and track content changes.
+
+## Overview
+
+The MediaContent service offers two methods:
+
+- `getMediaContent` - Retrieve media files for products
+- `getMediaDateModified` - Track media updates
+
+## Setup
+
+Configure your client with the MediaContent endpoint:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+const supplier = new PromoStandards.Client({
+  id: 'your_account_id',
+  password: 'your_password',
+  endpoints: [
+    {
+      type: 'MediaContent',
+      version: '1.1.0',
+      url: 'https://supplier.com/productMedia',
+    },
+  ],
+});
+```
+
+## Retrieving Product Media
+
+<Steps>
+  <Step title="Get product images">
+    Retrieve image URLs for a product:
+
+    ```javascript
+    const mediaContentData = await supplier.mediaContent.getMediaContent({
+      mediaType: 'Image',
+      productId: 'SHIRT-001',
+      classType: 1006,
+    });
+
+    console.log(mediaContentData);
+    ```
+  </Step>
+
+  <Step title="Process media URLs">
+    The response contains URLs to actual media files:
+
+    ```javascript
+    if (mediaContentData?.MediaContentArray) {
+      for (const media of mediaContentData.MediaContentArray) {
+        console.log(`Image URL: ${media.url}`);
+        console.log(`Description: ${media.description}`);
+        console.log(`Class Type: ${media.classType}`);
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Understanding Media Types
+
+The `mediaType` parameter specifies what kind of media to retrieve:
+
+### Image
+
+Product photographs and graphics:
+
+```javascript
+const images = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Image',
+  productId: 'SHIRT-001',
+  classType: 1006,
+});
+```
+
+### Document
+
+PDF files, spec sheets, and documentation:
+
+```javascript
+const documents = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Document',
+  productId: 'SHIRT-001',
+});
+```
+
+### Video
+
+Product videos and demonstrations:
+
+```javascript
+const videos = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Video',
+  productId: 'SHIRT-001',
+});
+```
+
+<Note>
+  Not all suppliers support all media types. Check with your supplier for available formats.
+</Note>
+
+## Understanding Class Types
+
+Class types categorize images by their purpose. Common class type codes:
+
+| Code | Description | Use Case |
+|------|-------------|----------|
+| 1001 | Product Image | Main product photograph |
+| 1002 | Product Image (Additional) | Alternate angles/views |
+| 1003 | Product Image (Blank) | Product without decoration |
+| 1004 | Product Image (Decorated) | Product with sample decoration |
+| 1005 | Product Image (Lifestyle) | Product in use/context |
+| 1006 | Product Image (High Resolution) | Print-quality images |
+
+### Getting High-Resolution Images
+
+```javascript
+const hiResImages = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Image',
+  productId: 'SHIRT-001',
+  classType: 1006, // High resolution
+});
+```
+
+### Getting Lifestyle Images
+
+```javascript
+const lifestyleImages = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Image',
+  productId: 'SHIRT-001',
+  classType: 1005, // Lifestyle/contextual
+});
+```
+
+## Filtering by Product Variant
+
+Retrieve media for specific product variants:
+
+```javascript
+const variantMedia = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Image',
+  productId: 'SHIRT-001',
+  partId: 'SHIRT-001-L-BLU', // Blue, Large variant
+  classType: 1001,
+});
+```
+
+## Localization Support
+
+Get media in specific languages:
+
+```javascript
+const localizedMedia = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Document',
+  productId: 'SHIRT-001',
+  cultureName: 'en-US', // English (United States)
+});
+
+// French Canadian documents
+const frenchMedia = await supplier.mediaContent.getMediaContent({
+  mediaType: 'Document',
+  productId: 'SHIRT-001',
+  cultureName: 'fr-CA', // French (Canada)
+});
+```
+
+## Tracking Media Updates
+
+Monitor when media files have been updated:
+
+```javascript
+const modifiedMedia = await supplier.mediaContent.getMediaDateModified({
+  changeTimeStamp: '2024-01-01T00:00:00Z',
+});
+
+if (modifiedMedia?.MediaDateModifiedArray) {
+  console.log('Products with updated media:');
+  
+  for (const product of modifiedMedia.MediaDateModifiedArray) {
+    console.log(`Product ${product.productId} updated on ${product.lastModified}`);
+    
+    // Fetch updated media
+    const updatedMedia = await supplier.mediaContent.getMediaContent({
+      mediaType: 'Image',
+      productId: product.productId,
+    });
+  }
+}
+```
+
+<Tip>
+  Use `getMediaDateModified` in scheduled jobs to keep your media library synchronized.
+</Tip>
+
+## Complete Media Workflow
+
+Here's a practical example that retrieves and organizes all media for a product:
+
+```javascript
+import { PromoStandards } from 'promostandards-sdk-js';
+
+async function downloadProductMedia(productId) {
+  const supplier = new PromoStandards.Client({
+    id: 'account_id',
+    password: 'password',
+    endpoints: [
+      {
+        type: 'MediaContent',
+        version: '1.1.0',
+        url: 'https://supplier.com/productMedia',
+      },
+    ],
+  });
+
+  const mediaLibrary = {
+    productId: productId,
+    images: [],
+    documents: [],
+    videos: [],
+  };
+
+  try {
+    // Get all image types
+    const imageClassTypes = [1001, 1002, 1003, 1004, 1005, 1006];
+    
+    for (const classType of imageClassTypes) {
+      const images = await supplier.mediaContent.getMediaContent({
+        mediaType: 'Image',
+        productId: productId,
+        classType: classType,
+      });
+
+      if (images?.MediaContentArray) {
+        mediaLibrary.images.push(...images.MediaContentArray.map(img => ({
+          url: img.url,
+          description: img.description,
+          classType: img.classType,
+          classTypeDescription: getClassTypeDescription(img.classType),
+        })));
+      }
+    }
+
+    // Get documents
+    const documents = await supplier.mediaContent.getMediaContent({
+      mediaType: 'Document',
+      productId: productId,
+    });
+
+    if (documents?.MediaContentArray) {
+      mediaLibrary.documents = documents.MediaContentArray;
+    }
+
+    // Get videos
+    const videos = await supplier.mediaContent.getMediaContent({
+      mediaType: 'Video',
+      productId: productId,
+    });
+
+    if (videos?.MediaContentArray) {
+      mediaLibrary.videos = videos.MediaContentArray;
+    }
+
+    return mediaLibrary;
+  } catch (error) {
+    console.error('Error fetching media:', error);
+    throw error;
+  }
+}
+
+function getClassTypeDescription(classType) {
+  const descriptions = {
+    1001: 'Primary Product Image',
+    1002: 'Additional Product Image',
+    1003: 'Blank Product Image',
+    1004: 'Decorated Product Image',
+    1005: 'Lifestyle Image',
+    1006: 'High Resolution Image',
+  };
+  return descriptions[classType] || 'Unknown';
+}
+
+// Usage
+const media = await downloadProductMedia('SHIRT-001');
+
+console.log(`Found ${media.images.length} images`);
+console.log(`Found ${media.documents.length} documents`);
+console.log(`Found ${media.videos.length} videos`);
+
+// Display primary image
+const primaryImage = media.images.find(img => img.classType === 1001);
+if (primaryImage) {
+  console.log('Primary image URL:', primaryImage.url);
+}
+```
+
+## Building an Image Gallery
+
+Create a responsive image gallery from media content:
+
+```javascript
+async function buildProductGallery(productId) {
+  const supplier = new PromoStandards.Client({
+    id: 'account_id',
+    password: 'password',
+    endpoints: [
+      {
+        type: 'MediaContent',
+        version: '1.1.0',
+        url: 'https://supplier.com/productMedia',
+      },
+    ],
+  });
+
+  // Get all product images
+  const allImages = await supplier.mediaContent.getMediaContent({
+    mediaType: 'Image',
+    productId: productId,
+  });
+
+  if (!allImages?.MediaContentArray) {
+    return { primary: null, gallery: [] };
+  }
+
+  // Organize by class type
+  const organized = {
+    primary: allImages.MediaContentArray.find(img => img.classType === 1001),
+    additional: allImages.MediaContentArray.filter(img => img.classType === 1002),
+    lifestyle: allImages.MediaContentArray.filter(img => img.classType === 1005),
+    highRes: allImages.MediaContentArray.filter(img => img.classType === 1006),
+  };
+
+  // Build gallery array (primary first, then additional, then lifestyle)
+  const gallery = [
+    organized.primary,
+    ...organized.additional,
+    ...organized.lifestyle,
+  ].filter(Boolean);
+
+  return {
+    primary: organized.primary,
+    gallery: gallery,
+    downloadables: organized.highRes,
+  };
+}
+
+// Usage
+const gallery = await buildProductGallery('SHIRT-001');
+
+console.log('Display this image first:', gallery.primary?.url);
+console.log('Gallery images:', gallery.gallery.map(img => img.url));
+console.log('High-res downloads:', gallery.downloadables.map(img => img.url));
+```
+
+## Method Reference
+
+### getMediaContent
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `mediaType` | string | Yes | Type of media (Image, Document, Video) |
+| `productId` | string | Yes | Product identifier |
+| `classType` | number | No | Media classification code |
+| `partId` | string | No | Specific variant/part ID |
+| `cultureName` | string | No | Localization culture (e.g., en-US, fr-CA) |
+
+### getMediaDateModified
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `changeTimeStamp` | string | Yes | ISO 8601 timestamp |
+| `cultureName` | string | No | Localization culture |
+
+## Best Practices
+
+<Steps>
+  <Step title="Request specific class types">
+    Always specify the `classType` to get exactly the images you need and reduce response size.
+  </Step>
+
+  <Step title="Cache media URLs">
+    Media URLs are stable. Cache them locally and use `getMediaDateModified` to detect changes.
+  </Step>
+
+  <Step title="Handle missing media gracefully">
+    Not all products have all media types. Always check if `MediaContentArray` exists before processing.
+  </Step>
+
+  <Step title="Optimize loading">
+    Load primary images first, then lazy-load additional images as needed.
+  </Step>
+
+  <Step title="Respect bandwidth">
+    Don't request high-resolution images unless actually needed for download or print.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Working with Products" icon="box-open" href="/guides/working-with-products">
+    Retrieve product details and specifications
+  </Card>
+  <Card title="Managing Inventory" icon="warehouse" href="/guides/managing-inventory">
+    Check stock levels and availability
+  </Card>
+</CardGroup>

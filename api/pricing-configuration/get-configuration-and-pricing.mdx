@@ -1,0 +1,70 @@
+---
+title: 'Get configuration and pricing'
+description: 'Retrieve product configuration details and pricing information'
+---
+
+Retrieves detailed configuration and pricing information for a specific product, including part details, decoration options, and pricing tiers.
+
+## Method signature
+
+```javascript
+await client.productPricingAndConfiguration.getConfigurationAndPricing(params)
+```
+
+## Parameters
+
+<ParamField path="productId" type="string" required>
+  The unique identifier for the product
+</ParamField>
+
+<ParamField path="partId" type="string">
+  The specific part identifier for the product variant
+</ParamField>
+
+<ParamField path="currency" type="string" required>
+  The currency code for pricing (e.g., "USD", "CAD")
+</ParamField>
+
+<ParamField path="fobId" type="string" required>
+  The FOB (Free On Board) point identifier
+</ParamField>
+
+<ParamField path="priceType" type="string" required>
+  The type of pricing to retrieve (e.g., "Customer", "List")
+</ParamField>
+
+<ParamField path="localizationCountry" type="string" required>
+  Country code for localization (e.g., "US", "CA")
+</ParamField>
+
+<ParamField path="localizationLanguage" type="string" required>
+  Language code for localization (e.g., "en", "fr")
+</ParamField>
+
+<ParamField path="configurationType" type="string" required>
+  The type of configuration to retrieve
+</ParamField>
+
+## Returns
+
+Returns a promise that resolves to product configuration and pricing data, including:
+
+- Product details and part information
+- Available decoration locations and methods
+- Pricing tiers based on quantity
+- Applicable charges and fees
+- Configuration options
+
+## Example
+
+```javascript
+const productPricingAndConfigurationData =
+  await client.productPricingAndConfiguration.getConfigurationAndPricing({
+    productId: 'item_id',
+    currency: 'USD',
+    priceType: 'Customer',
+    fobId: 1,
+  });
+
+console.log(productPricingAndConfigurationData);
+```
