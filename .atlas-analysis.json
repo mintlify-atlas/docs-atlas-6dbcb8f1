@@ -1,0 +1,137 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "PromoStandards SDK for JavaScript",
+  "projectDescription": "Unofficial JavaScript SDK for PromoStandards SOAP APIs with XML/JSON response support",
+  "theme": "palm",
+  "primaryColor": "#2563eb",
+  "lightColor": "#3b82f6",
+  "darkColor": "#1e40af",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/client-configuration",
+              "concepts/authentication",
+              "concepts/response-formats",
+              "concepts/error-handling"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/working-with-products",
+              "guides/managing-inventory",
+              "guides/media-and-assets",
+              "guides/pricing-and-configuration",
+              "guides/orders-and-status"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Client",
+            "pages": [
+              "api/client",
+              "api/types"
+            ]
+          },
+          {
+            "group": "Product Data",
+            "pages": [
+              "api/product-data/get-product",
+              "api/product-data/get-product-sellable",
+              "api/product-data/get-product-date-modified",
+              "api/product-data/get-product-close-out"
+            ]
+          },
+          {
+            "group": "Media Content",
+            "pages": [
+              "api/media-content/get-media-content",
+              "api/media-content/get-media-date-modified"
+            ]
+          },
+          {
+            "group": "Inventory",
+            "pages": [
+              "api/inventory/get-inventory-levels",
+              "api/inventory/get-filter-values"
+            ]
+          },
+          {
+            "group": "Product Pricing & Configuration",
+            "pages": [
+              "api/pricing-configuration/get-configuration-and-pricing",
+              "api/pricing-configuration/get-available-locations",
+              "api/pricing-configuration/get-decoration-colors",
+              "api/pricing-configuration/get-fob-points",
+              "api/pricing-configuration/get-available-charges"
+            ]
+          },
+          {
+            "group": "Order Management",
+            "pages": [
+              "api/order-status/get-order-status-details",
+              "api/order-status/get-order-status-types",
+              "api/order-shipment/get-order-shipment-notification",
+              "api/purchase-order/send-po"
+            ]
+          },
+          {
+            "group": "Invoice",
+            "pages": [
+              "api/invoice/get-invoices"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Complete PromoStandards API coverage",
+    "TypeScript support with full type definitions",
+    "Flexible XML or JSON response formats",
+    "Promise-based async/await interface",
+    "Support for multiple service versions",
+    "Product data and media content retrieval",
+    "Real-time inventory management",
+    "Pricing and configuration queries",
+    "Order status tracking and notifications"
+  ],
+  "publicApiSurface": [
+    "PromoStandards.Client",
+    "client.productData.getProduct()",
+    "client.productData.getProductSellable()",
+    "client.productData.getProductDateModified()",
+    "client.productData.getProductCloseOut()",
+    "client.mediaContent.getMediaContent()",
+    "client.mediaContent.getMediaDateModified()",
+    "client.inventory.getInventoryLevels()",
+    "client.inventory.getFilterValues()",
+    "client.productPricingAndConfiguration.getConfigurationAndPricing()",
+    "client.productPricingAndConfiguration.getAvailableLocations()",
+    "client.productPricingAndConfiguration.getDecorationColors()",
+    "client.productPricingAndConfiguration.getFobPoints()",
+    "client.productPricingAndConfiguration.getAvailableCharges()",
+    "client.orderStatus.getOrderStatusDetails()",
+    "client.orderStatus.getOrderStatusTypes()",
+    "client.orderShipmentNotification.getOrderShipmentNotification()",
+    "client.invoice.getInvoices()",
+    "client.purchaseOrder.sendPO()"
+  ]
+}
